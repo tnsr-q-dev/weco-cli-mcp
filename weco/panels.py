@@ -5,7 +5,7 @@ from rich.layout import Layout
 from rich.panel import Panel
 from rich.syntax import Syntax
 from typing import Dict, List, Optional, Union, Tuple
-from .utils import format_number, truncate_text
+from .utils import format_number
 
 
 class SummaryPanel:
@@ -67,7 +67,6 @@ class PlanPanel:
 
     def __init__(self):
         self.plan = ""
-        self.max_lines = 3  # Approximate number of lines that can fit in the panel
 
     def update(self, plan: str):
         """Update the plan text."""
@@ -79,15 +78,7 @@ class PlanPanel:
 
     def get_display(self) -> Panel:
         """Create a panel displaying the plan with truncation if needed."""
-        display_text = truncate_text(text=self.plan, max_lines=self.max_lines)
-        return Panel(
-            display_text,
-            title="[bold]📝 Thinking...",
-            border_style="cyan",
-            expand=True,
-            padding=(0, 1),
-            subtitle="[cyan]↓ truncated ↓[/]" if len(self.plan) > self.max_lines else None,
-        )
+        return Panel(self.plan, title="[bold]📝 Thinking...", border_style="cyan", expand=True, padding=(0, 1))
 
 
 class Node:
@@ -238,7 +229,6 @@ class EvaluationOutputPanel:
 
     def __init__(self):
         self.output = ""
-        self.max_lines = 25  # Approximate number of lines that can fit in the panel
 
     def update(self, output: str) -> None:
         """Update the evaluation output."""
@@ -250,13 +240,7 @@ class EvaluationOutputPanel:
 
     def get_display(self) -> Panel:
         """Create a panel displaying the evaluation output with truncation if needed."""
-        display_text = truncate_text(text=self.output, max_lines=self.max_lines)
-
-        title = "[bold]📋 Evaluation Output"
-        if len(self.output) == len(display_text):
-            title += " (truncated)[/]"
-
-        return Panel(display_text, title=title, border_style="red", expand=True, padding=(0, 1))
+        return Panel(self.output, title="[bold]📋 Evaluation Output", border_style="red", expand=True, padding=(0, 1))
 
 
 class SolutionPanels:
@@ -267,7 +251,6 @@ class SolutionPanels:
         self.current_node = None
         # Best solution
         self.best_node = None
-        self.max_lines = 30  # Approximate number of lines that can fit in each panel
 
     def update(self, current_node: Union[Node, None], best_node: Union[Node, None]):
         """Update the current and best solutions."""
@@ -282,44 +265,24 @@ class SolutionPanels:
         best_code = self.best_node.code if self.best_node is not None else ""
         best_score = self.best_node.metric if self.best_node is not None else None
 
-        # Determine if code is too long (approximate)
-        current_lines = current_code.count("\n") + 1
-        best_lines = best_code.count("\n") + 1
-
         # Current solution (without score)
         current_title = f"[bold]💡 Current Solution (Step {current_step})"
         current_panel = Panel(
-            Syntax(
-                str(current_code),
-                "python",
-                theme="monokai",
-                line_numbers=True,
-                word_wrap=False,
-                line_range=(0, self.max_lines),  # Only show first max_lines lines
-            ),
+            Syntax(str(current_code), "python", theme="monokai", line_numbers=True, word_wrap=False),
             title=current_title,
             border_style="yellow",
             expand=True,
             padding=(0, 1),
-            subtitle="[yellow]↓ truncated ↓[/]" if current_lines > self.max_lines else None,
         )
 
         # Best solution
         best_title = f"[bold]🏆 Best Solution ([green]Score: {f'{best_score:.4f}' if best_score is not None else 'N/A'}[/])"
         best_panel = Panel(
-            Syntax(
-                str(best_code),
-                "python",
-                theme="monokai",
-                line_numbers=True,
-                word_wrap=False,
-                line_range=(0, self.max_lines),  # Only show first max_lines lines
-            ),
+            Syntax(str(best_code), "python", theme="monokai", line_numbers=True, word_wrap=False),
             title=best_title,
             border_style="green",
             expand=True,
             padding=(0, 1),
-            subtitle="[yellow]↓ truncated ↓[/]" if best_lines > self.max_lines else None,
         )
 
         return current_panel, best_panel
