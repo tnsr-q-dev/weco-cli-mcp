@@ -185,6 +185,9 @@ def main() -> None:
                 # Save next solution (.runs/<session-id>/step_<step>.py)
                 write_to_path(fp=runs_dir / f"step_{step}.py", content=eval_and_next_solution_response["code"])
 
+                # Write the next solution to the source file
+                write_to_path(fp=source_fp, content=eval_and_next_solution_response["code"])
+
                 # Get the optimization session status for
                 # the best solution, its score, and the history to plot the tree
                 status_response = get_optimization_session_status(console=console, session_id=session_id, include_history=True)
