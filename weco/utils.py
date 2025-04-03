@@ -13,12 +13,11 @@ import pathlib
 def read_api_keys_from_env() -> Dict[str, Any]:
     """Read API keys from environment variables."""
     keys = {}
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
-    if openai_api_key is not None and len(openai_api_key) > 0:
-        keys["OPENAI_API_KEY"] = openai_api_key
-    if anthropic_api_key is not None and len(anthropic_api_key) > 0:
-        keys["ANTHROPIC_API_KEY"] = anthropic_api_key
+    keys_to_check = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY"]
+    for key in keys_to_check:
+        value = os.getenv(key)
+        if value is not None and len(value) > 0:
+            keys[key] = value
     return keys
 
 
@@ -106,14 +105,3 @@ def run_evaluation(eval_command: str) -> str:
             output += "\n"
         output += result.stdout
     return output
-
-
-def truncate_text(text: str, max_lines: int) -> str:
-    """Truncate text to a maximum number of lines."""
-    lines = text.split("\n")
-    if len(lines) > max_lines:
-        display_lines = lines[:max_lines]
-        display_text = "\n".join(display_lines)
-    else:
-        display_text = text
-    return display_text

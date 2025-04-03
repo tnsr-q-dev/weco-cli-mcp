@@ -27,6 +27,7 @@ The `weco` CLI leverages advanced optimization techniques and language model str
    
    - **OpenAI:** `export OPENAI_API_KEY="your_key_here"`
    - **Anthropic:** `export ANTHROPIC_API_KEY="your_key_here"`
+   - **Google DeepMind:** `export GEMINI_API_KEY="your_key_here"`
 
 ---
 
@@ -77,6 +78,7 @@ The CLI supports the following model providers:
 
 - **OpenAI:** Set your API key using `OPENAI_API_KEY`.
 - **Anthropic:** Set your API key using `ANTHROPIC_API_KEY`.
+- **Google DeepMind:** Set your API key using `GEMINI_API_KEY`.
 
 ---
 
