@@ -1,7 +1,7 @@
 from typing import Dict, Any
 import rich
 import requests
-from weco import __version__, __base_url__
+from weco import __pkg_version__, __base_url__
 import sys
 
 
@@ -45,7 +45,7 @@ def start_optimization_session(
                         "evaluator": evaluator_config,
                         "search_policy": search_policy_config,
                     },
-                    "metadata": {"client_name": "cli", "client_version": __version__, **api_keys},
+                    "metadata": {"client_name": "cli", "client_version": __pkg_version__, **api_keys},
                 },
             )
             response.raise_for_status()
