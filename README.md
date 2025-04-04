@@ -3,13 +3,13 @@
 [![Python](https://img.shields.io/badge/Python-3.12.0-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-`weco` is a command-line interface for interacting with Weco AI's code optimizer, powerred by [AI-Driven Exploration](https://arxiv.org/abs/2502.13138). Whether you are looking to improve performance or refine code quality, our CLI streamlines your workflow for a better development experience.
+`weco` is a command-line interface for interacting with Weco AI's code optimizer, powerred by [AI-Driven Exploration](https://arxiv.org/abs/2502.13138).
 
 ---
 
 ## Overview
 
-The `weco` CLI leverages advanced optimization techniques and language model strategies to iteratively improve your source code. It supports multiple language models and offers a flexible configuration to suit different optimization tasks.
+The `weco` CLI leverages tree search with LLMs to iteratively improve your code. It supports multiple language models and offers a flexible configuration to suit different optimization tasks.
 
 ---
 
