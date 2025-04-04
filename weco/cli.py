@@ -104,54 +104,59 @@ def main() -> None:
             api_keys=api_keys,
         )
 
-        # Define the runs directory (.runs/<session-id>)
-        session_id = session_response["session_id"]
-        runs_dir = pathlib.Path(".runs") / session_id
-        runs_dir.mkdir(parents=True, exist_ok=True)
-
-        # Save the original code (.runs/<session-id>/original.py)
-        runs_copy_source_fp = runs_dir / "original.py"
-        write_to_path(fp=runs_copy_source_fp, content=source_code)
-
-        # Write the code string to the source file path
-        # Do this after the original code is saved
-        write_to_path(fp=source_fp, content=session_response["code"])
-
-        # Update the panels with the initial solution
-        # Add session id now that we have it
-        summary_panel.session_id = session_id
-        # Set the step of the progress bar
-        summary_panel.set_step(step=0)
-        # Update the token counts
-        summary_panel.update_token_counts(usage=session_response["usage"])
-        # Update the plan
-        plan_panel.update(plan=session_response["plan"])
-        # Build the metric tree
-        tree_panel.build_metric_tree(
-            nodes=[
-                {
-                    "solution_id": session_response["solution_id"],
-                    "parent_id": None,
-                    "code": session_response["code"],
-                    "step": 0,
-                    "metric_value": None,
-                    "is_buggy": False,
-                }
-            ]
-        )
-        # Set the current solution as unevaluated since we haven't run the evaluation function and fed it back to the model yet
-        tree_panel.set_unevaluated_node(node_id=session_response["solution_id"])
-        # Update the solution panels with the initial solution and get the panel displays
-        solution_panels.update(
-            current_node=Node(
-                id=session_response["solution_id"], parent_id=None, code=session_response["code"], metric=None, is_buggy=False
-            ),
-            best_node=None,
-        )
-        current_solution_panel, best_solution_panel = solution_panels.get_display(current_step=0)
         # Define the refresh rate
         refresh_rate = 4
         with Live(layout, refresh_per_second=refresh_rate, screen=True) as live:
+            # Define the runs directory (.runs/<session-id>)
+            session_id = session_response["session_id"]
+            runs_dir = pathlib.Path(".runs") / session_id
+            runs_dir.mkdir(parents=True, exist_ok=True)
+
+            # Save the original code (.runs/<session-id>/original.py)
+            runs_copy_source_fp = runs_dir / "original.py"
+            write_to_path(fp=runs_copy_source_fp, content=source_code)
+
+            # Write the code string to the source file path
+            # Do this after the original code is saved
+            write_to_path(fp=source_fp, content=session_response["code"])
+
+            # Update the panels with the initial solution
+            # Add session id now that we have it
+            summary_panel.session_id = session_id
+            # Set the step of the progress bar
+            summary_panel.set_step(step=0)
+            # Update the token counts
+            summary_panel.update_token_counts(usage=session_response["usage"])
+            # Update the plan
+            plan_panel.update(plan=session_response["plan"])
+            # Build the metric tree
+            tree_panel.build_metric_tree(
+                nodes=[
+                    {
+                        "solution_id": session_response["solution_id"],
+                        "parent_id": None,
+                        "code": session_response["code"],
+                        "step": 0,
+                        "metric_value": None,
+                        "is_buggy": False,
+                    }
+                ]
+            )
+            # Set the current solution as unevaluated since we haven't run the evaluation function and fed it back to the model yet
+            tree_panel.set_unevaluated_node(node_id=session_response["solution_id"])
+            # Update the solution panels with the initial solution and get the panel displays
+            solution_panels.update(
+                current_node=Node(
+                    id=session_response["solution_id"],
+                    parent_id=None,
+                    code=session_response["code"],
+                    metric=None,
+                    is_buggy=False,
+                ),
+                best_node=None,
+            )
+            current_solution_panel, best_solution_panel = solution_panels.get_display(current_step=0)
+
             # Update the entire layout
             smooth_update(
                 live=live,

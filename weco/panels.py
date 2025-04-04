@@ -12,7 +12,7 @@ class SummaryPanel:
     """Holds a summary of the optimization session."""
 
     def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, session_id: str = None):
-        self.goal = ("Maximizing" if maximize else "Minimizing") + f" {metric_name}"
+        self.goal = ("Maximizing" if maximize else "Minimizing") + f" {metric_name}..."
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         self.total_steps = total_steps
@@ -48,10 +48,10 @@ class SummaryPanel:
         summary_table.add_row("")
         # Log directory
         runs_dir = f".runs/{self.session_id}"
-        summary_table.add_row(f"[bold cyan]Logs:[/] [blue]{runs_dir}[/]")
+        summary_table.add_row(f"[bold cyan]Logs:[/] [blue underline]{runs_dir}[/]")
         summary_table.add_row("")
         # Model used
-        summary_table.add_row(f"[bold cyan]Model:[/] {self.model}")
+        summary_table.add_row(f"[bold cyan]Model:[/] [yellow]{self.model}[/]")
         summary_table.add_row("")
         # Token counts
         summary_table.add_row(
@@ -197,7 +197,7 @@ class MetricTreePanel:
                     # best node
                     color = "green"
                     style = "bold"
-                    text = f"🏆 {node.metric:.3f}"
+                    text = f"{node.metric:.3f} 🏆"
                 elif node.metric is None:
                     # metric not extracted from evaluated solution
                     color = "yellow"
@@ -214,7 +214,7 @@ class MetricTreePanel:
             for child in node.children:
                 append_rec(child, subtree)
 
-        tree = Tree("solutions")
+        tree = Tree("🌳")
         for n in self.metric_tree.get_draft_nodes():
             append_rec(n, tree)
 
@@ -223,7 +223,9 @@ class MetricTreePanel:
     def get_display(self) -> Panel:
         """Get a panel displaying the solution tree."""
         # Make sure the metric tree is built before calling build_rich_tree
-        return Panel(self._build_rich_tree(), title="[bold]🌳 Exploring...", border_style="green", expand=True, padding=(0, 1))
+        return Panel(
+            self._build_rich_tree(), title="[bold]🔎 Exploring Solutions...", border_style="green", expand=True, padding=(0, 1)
+        )
 
 
 class EvaluationOutputPanel:
@@ -242,7 +244,7 @@ class EvaluationOutputPanel:
 
     def get_display(self) -> Panel:
         """Create a panel displaying the evaluation output with truncation if needed."""
-        return Panel(self.output, title="[bold]📋 Evaluation Output", border_style="red", expand=True, padding=(0, 1))
+        return Panel(self.output, title="[bold]📋 Evaluation Output", border_style="blue", expand=True, padding=(0, 1))
 
 
 class SolutionPanels:

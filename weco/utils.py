@@ -28,10 +28,14 @@ def read_additional_instructions(additional_instructions: str | None) -> str | N
 
     # Try interpreting as a path first
     potential_path = pathlib.Path(additional_instructions)
-    if potential_path.exists() and potential_path.is_file():
-        return read_from_path(potential_path, is_json=False)  # type: ignore # read_from_path returns str when is_json=False
-    else:
-        # If it's not a valid file path, return the string itself
+    try:
+        if potential_path.exists() and potential_path.is_file():
+            return read_from_path(potential_path, is_json=False)  # type: ignore # read_from_path returns str when is_json=False
+        else:
+            # If it's not a valid file path, return the string itself
+            return additional_instructions
+    except OSError:
+        # If the path can't be read, return the string itself
         return additional_instructions
 
 
