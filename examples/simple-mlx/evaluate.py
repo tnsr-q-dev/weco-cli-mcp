@@ -66,7 +66,7 @@ def bench(f, inputs, n_warmup, n_rep):
     t_avg = 0.0
     for _ in range(n_rep):
         # Clear cache before timing
-        mx.metal.clear_cache()
+        mx.clear_cache()
 
         start_time = time.time()
         result = f(inputs)

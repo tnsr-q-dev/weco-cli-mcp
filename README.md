@@ -66,19 +66,19 @@ weco --source examples/simple-torch/optimize.py \
      --metric speedup \
      --maximize true \
      --steps 15 \
-     --model "o3-mini" \
+     --model o3-mini \
      --additional-instructions "Fuse operations in the forward method while ensuring the max float deviation remains small. Maintain the same format of the code."
 ```
 
-Optimizing these same using mlx and metal:
+Sometimes we have a bit more context we'd like to provide. Its not easy to fit all of this in a string like shown above with `additional-instructions`. Thats why you can also provide a path to any file you'd like to me read as in context. In this example, we optimize the same operations using mlx and metal with additional instructions:
 ```bash
 weco --source examples/simple-mlx/optimize.py \
      --eval-command "python examples/simple-mlx/evaluate.py --solution-path examples/simple-mlx/optimize.py" \
      --metric speedup \
      --maximize true \
      --steps 30 \
-     --model "o3-mini" \
-     --additional-instructions "examples/simple-mlx/metal-examples.rst"
+     --model o3-mini \
+     --additional-instructions examples/simple-mlx/metal-examples.rst
 ```
 ---
 
