@@ -41,7 +41,13 @@ def main() -> None:
         "--eval-command", type=str, required=True, help="Command to run for evaluation (e.g. 'python eval.py --arg1=val1')"
     )
     parser.add_argument("--metric", type=str, required=True, help="Metric to optimize")
-    parser.add_argument("--maximize", type=bool, required=True, help="Maximize the metric")
+    parser.add_argument(
+        "--maximize",
+        type=str,
+        choices=["true", "false"],
+        required=True,
+        help="Specify 'true' to maximize the metric or 'false' to minimize.",
+    )
     parser.add_argument("--steps", type=int, required=True, help="Number of steps to run")
     parser.add_argument("--model", type=str, required=True, help="Model to use for optimization")
     parser.add_argument(
@@ -57,7 +63,7 @@ def main() -> None:
             # Define optimization session config
             evaluation_command = args.eval_command
             metric_name = args.metric
-            maximize = args.maximize
+            maximize = args.maximize == "true"
             steps = args.steps
             code_generator_config = {"model": args.model}
             evaluator_config = {"model": args.model}
@@ -75,9 +81,9 @@ def main() -> None:
             api_keys = read_api_keys_from_env()
 
         # Initialize panels
-        summary_panel = SummaryPanel(total_steps=steps, model=args.model)
+        summary_panel = SummaryPanel(maximize=maximize, metric_name=metric_name, total_steps=steps, model=args.model)
         plan_panel = PlanPanel()
-        solution_panels = SolutionPanels()
+        solution_panels = SolutionPanels(metric_name=metric_name)
         eval_output_panel = EvaluationOutputPanel()
         tree_panel = MetricTreePanel(maximize=maximize)
         layout = create_optimization_layout()

@@ -11,12 +11,13 @@ from .utils import format_number
 class SummaryPanel:
     """Holds a summary of the optimization session."""
 
-    def __init__(self, total_steps: int, model: str, session_id: str = None):
+    def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, session_id: str = None):
+        self.goal = ("Maximizing" if maximize else "Minimizing") + f" {metric_name}"
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         self.total_steps = total_steps
         self.model = model
-        self.session_id = session_id or "unknown"
+        self.session_id = session_id or "N/A"
         self.progress = Progress(
             TextColumn("[progress.description]{task.description}"),
             BarColumn(bar_width=20),
@@ -42,6 +43,9 @@ class SummaryPanel:
         """Create a summary panel with the relevant information."""
         layout = Layout(name="summary")
         summary_table = Table(show_header=False, box=None, padding=(0, 1))
+        # Goal
+        summary_table.add_row(f"[bold cyan]Goal:[/] {self.goal}")
+        summary_table.add_row("")
         # Log directory
         runs_dir = f".runs/{self.session_id}"
         summary_table.add_row(f"[bold cyan]Logs:[/] [blue]{runs_dir}[/]")
@@ -172,7 +176,7 @@ class MetricTreePanel:
     def _build_rich_tree(self) -> Tree:
         """Get a Rich Tree representation of the solution tree using a DFS like traversal."""
         if len(self.metric_tree.nodes) == 0:
-            return Tree("[bold green]Building 🌳")
+            return Tree("[bold green]Building first solution...")
 
         best_node = self.metric_tree.get_best_node()
 
@@ -193,7 +197,7 @@ class MetricTreePanel:
                     # best node
                     color = "green"
                     style = "bold"
-                    text = f"{node.metric:.3f} (best)"
+                    text = f"🏆 {node.metric:.3f}"
                 elif node.metric is None:
                     # metric not extracted from evaluated solution
                     color = "yellow"
@@ -210,7 +214,7 @@ class MetricTreePanel:
             for child in node.children:
                 append_rec(child, subtree)
 
-        tree = Tree("🌳")
+        tree = Tree("solutions")
         for n in self.metric_tree.get_draft_nodes():
             append_rec(n, tree)
 
@@ -219,9 +223,7 @@ class MetricTreePanel:
     def get_display(self) -> Panel:
         """Get a panel displaying the solution tree."""
         # Make sure the metric tree is built before calling build_rich_tree
-        return Panel(
-            self._build_rich_tree(), title="[bold]🌳 Solution Tree", border_style="green", expand=True, padding=(0, 1)
-        )
+        return Panel(self._build_rich_tree(), title="[bold]🌳 Exploring...", border_style="green", expand=True, padding=(0, 1))
 
 
 class EvaluationOutputPanel:
@@ -246,11 +248,13 @@ class EvaluationOutputPanel:
 class SolutionPanels:
     """Displays the current and best solutions side by side."""
 
-    def __init__(self):
+    def __init__(self, metric_name: str):
         # Current solution
         self.current_node = None
         # Best solution
         self.best_node = None
+        # Metric name
+        self.metric_name = metric_name.capitalize()
 
     def update(self, current_node: Union[Node, None], best_node: Union[Node, None]):
         """Update the current and best solutions."""
@@ -276,7 +280,7 @@ class SolutionPanels:
         )
 
         # Best solution
-        best_title = f"[bold]🏆 Best Solution ([green]Score: {f'{best_score:.4f}' if best_score is not None else 'N/A'}[/])"
+        best_title = f"[bold]🏆 Best Solution ([green]{self.metric_name}: {f'{best_score:.4f}' if best_score is not None else 'N/A'}[/])"
         best_panel = Panel(
             Syntax(str(best_code), "python", theme="monokai", line_numbers=True, word_wrap=False),
             title=best_title,
