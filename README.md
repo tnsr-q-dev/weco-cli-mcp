@@ -5,11 +5,21 @@
 
 `weco` is a command-line interface for interacting with Weco AI's code optimizer, powerred by [AI-Driven Exploration](https://arxiv.org/abs/2502.13138).
 
+
+
+https://github.com/user-attachments/assets/cb724ef1-bff6-4757-b457-d3b2201ede81
+
+
+
 ---
 
 ## Overview
 
 The weco CLI leverages a tree search approach with LLMs to iteratively improve your code.
+
+![image](https://github.com/user-attachments/assets/a6ed63fa-9c40-498e-aa98-a873e5786509)
+
+
 
 ---
 
