@@ -47,13 +47,13 @@ The weco CLI leverages a tree search approach with LLMs to iteratively improve y
 
 | Argument                    | Description                                                                                                                                   | Required |
 |-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|----------|
-| `--source`                  | Path to the Python source code that will be optimized (e.g. optimize.py).                                                                    | Yes      |
+| `--source`                  | Path to the Python source code that will be optimized (e.g. optimize.py).                                                                     | Yes      |
 | `--eval-command`            | Command to run for evaluation (e.g. 'python eval.py --arg1=val1').                                                                            | Yes      |
 | `--metric`                  | Metric to optimize.                                                                                                                           | Yes      |
-| `--maximize`                | Boolean flag indicating whether to maximize the metric.                                                                                       | Yes      |
+| `--maximize`                | Whether to maximize ('true') or minimize ('false') the metric.                                                                                | Yes      |
 | `--steps`                   | Number of optimization steps to run.                                                                                                          | Yes      |
 | `--model`                   | Model to use for optimization.                                                                                                                | Yes      |
-| `--additional-instructions` | (Optional) Description of additional instructions or path to a file containing additional instructions.                                       | No       |
+| `--additional-instructions` | (Optional) Description of additional instructions OR path to a file containing additional instructions.                                       | No       |
 
 ---
 
@@ -63,7 +63,7 @@ Optimizing common operations in pytorch:
 ```bash
 weco --source examples/simple-torch/optimize.py \
      --eval-command "python examples/simple-torch/evaluate.py --solution-path examples/simple-torch/optimize.py --device mps" \
-     --metric "speedup" \
+     --metric speedup \
      --maximize true \
      --steps 15 \
      --model "o3-mini" \
@@ -74,7 +74,7 @@ Optimizing these same using mlx and metal:
 ```bash
 weco --source examples/simple-mlx/optimize.py \
      --eval-command "python examples/simple-mlx/evaluate.py --solution-path examples/simple-mlx/optimize.py" \
-     --metric "speedup" \
+     --metric speedup \
      --maximize true \
      --steps 30 \
      --model "o3-mini" \
