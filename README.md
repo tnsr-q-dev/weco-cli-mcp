@@ -1,4 +1,4 @@
-# Weco CLI – Code Optimizer for Machine Learning Engineer
+# Weco CLI – Code Optimizer for Machine Learning Engineers
 
 [![Python](https://img.shields.io/badge/Python-3.12.0-blue)](https://www.python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -9,7 +9,7 @@
 
 ## Overview
 
-The `weco` CLI leverages tree search with LLMs to iteratively improve your code. It supports multiple language models and offers a flexible configuration to suit different optimization tasks.
+The weco CLI leverages a tree search approach with LLMs to iteratively improve your code.
 
 ---
 
