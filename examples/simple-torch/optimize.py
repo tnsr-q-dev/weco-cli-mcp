@@ -19,8 +19,8 @@ class Model(nn.Module):
         Returns:
             torch.Tensor: Output tensor of shape (batch_size, hidden_size).
         """
-        x = torch.matmul(x, self.weight.T)  # Gemm
-        x = x / 2  # Divide
-        x = torch.sum(x, dim=1, keepdim=True)  # Sum
-        x = x * self.scaling_factor  # Scaling
+        x = torch.matmul(x, self.weight.T)
+        x = x / 2
+        x = torch.sum(x, dim=1, keepdim=True)
+        x = x * self.scaling_factor
         return x

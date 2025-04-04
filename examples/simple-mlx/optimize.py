@@ -19,8 +19,8 @@ class Model(nn.Module):
         Returns:
             mx.array: Output tensor of shape (batch_size, hidden_size).
         """
-        x = mx.matmul(x, mx.transpose(self.weight))  # Gemm
-        x = x / 2  # Divide
-        x = mx.sum(x, axis=1, keepdims=True)  # Sum
-        x = x * self.scaling_factor  # Scaling
+        x = mx.matmul(x, mx.transpose(self.weight))
+        x = x / 2
+        x = mx.sum(x, axis=1, keepdims=True)
+        x = x * self.scaling_factor
         return x
