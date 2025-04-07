@@ -78,7 +78,7 @@ Here's how `weco` can be applied to common ML engineering tasks:
 | `--metric`                  | The name of the metric you want to optimize (e.g., 'accuracy', 'speedup', 'loss'). This metric name should match what's printed by your `--eval-command`.            | Yes      |
 | `--maximize`                | Whether to maximize (`true`) or minimize (`false`) the metric.                                                                                                           | Yes      |
 | `--steps`                   | Number of optimization steps (LLM iterations) to run.                                                                                                                    | Yes      |
-| `--model`                   | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.5-sonnet`). Recommended models to try include `o3-mini`, `claude-3-haiku`, and `gemini-1.5-flash`.        | Yes      |
+| `--model`                   | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.5-sonnet`). Recommended models to try include `o3-mini`, `claude-3-haiku`, and `gemini-2.5-pro`.        | Yes      |
 | `--additional-instructions` | (Optional) Natural language description of specific instructions OR path to a file containing detailed instructions to guide the LLM.                                       | No       |
 
 ---
