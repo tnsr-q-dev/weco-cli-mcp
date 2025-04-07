@@ -68,20 +68,13 @@ Here's how `weco` can be applied to common ML engineering tasks:
 ---
 
 ## Usage
-
-### Command Line Arguments
-
-| Argument                    | Description                                                                                                                                                              | Required |
-| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------- |
-| `--source`                  | Path to the source code file that will be optimized (e.g., `optimize.py`).                                                                                               | Yes      |
-| `--eval-command`            | Command to run for evaluating the code in `--source`. This command should print the target `--metric` and its value to the terminal (stdout/stderr). See note below. | Yes      |
-| `--metric`                  | The name of the metric you want to optimize (e.g., 'accuracy', 'speedup', 'loss'). This metric name should match what's printed by your `--eval-command`.            | Yes      |
-| `--maximize`                | Whether to maximize (`true`) or minimize (`false`) the metric.                                                                                                           | Yes      |
-| `--steps`                   | Number of optimization steps (LLM iterations) to run.                                                                                                                    | Yes      |
-| `--model`                   | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.5-sonnet`). Recommended models to try include `o3-mini`, `claude-3-haiku`, and `gemini-2.5-pro-exp-03-25`.        | Yes      |
-| `--additional-instructions` | (Optional) Natural language description of specific instructions OR path to a file containing detailed instructions to guide the LLM.                                       | No       |
+<div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+  <strong>⚠️ Warning: Code Modification</strong><br>
+  <code>weco</code> directly modifies the file specified by <code>--source</code> during the optimization process. It is <strong>strongly recommended</strong> to use version control (like Git) to track changes and revert if needed. Alternatively, ensure you have a backup of your original file before running the command. Upon completion, the file will contain the best-performing version of the code found during the run.
+</div>
 
 ---
+
 ### Examples
 
 **Example 1: Optimizing PyTorch operations**
@@ -112,6 +105,21 @@ weco --source examples/simple-mlx/optimize.py \
 
 ---
 
+### Command Line Arguments
+
+| Argument                    | Description                                                                                                                                                              | Required |
+| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------- |
+| `--source`                  | Path to the source code file that will be optimized (e.g., `optimize.py`).                                                                                               | Yes      |
+| `--eval-command`            | Command to run for evaluating the code in `--source`. This command should print the target `--metric` and its value to the terminal (stdout/stderr). See note below. | Yes      |
+| `--metric`                  | The name of the metric you want to optimize (e.g., 'accuracy', 'speedup', 'loss'). This metric name should match what's printed by your `--eval-command`.            | Yes      |
+| `--maximize`                | Whether to maximize (`true`) or minimize (`false`) the metric.                                                                                                           | Yes      |
+| `--steps`                   | Number of optimization steps (LLM iterations) to run.                                                                                                                    | Yes      |
+| `--model`                   | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.5-sonnet`). Recommended models to try include `o3-mini`, `claude-3-haiku`, and `gemini-2.5-pro-exp-03-25`.        | Yes      |
+| `--additional-instructions` | (Optional) Natural language description of specific instructions OR path to a file containing detailed instructions to guide the LLM.                                       | No       |
+
+---
+
+
 
 ### Important Note on Evaluation
 
@@ -131,14 +139,6 @@ Final speedup value = 1.5
 
 Weco will parse this output to extract the numerical value (1.5 in this case) associated with the metric name ('speedup').
 
----
-
-
-
-<div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
-  <strong>⚠️ Warning: Code Modification</strong><br>
-  <code>weco</code> directly modifies the file specified by <code>--source</code> during the optimization process. It is <strong>strongly recommended</strong> to use version control (like Git) to track changes and revert if needed. Alternatively, ensure you have a backup of your original file before running the command. Upon completion, the file will contain the best-performing version of the code found during the run.
-</div>
 
 ## Contributing
 
