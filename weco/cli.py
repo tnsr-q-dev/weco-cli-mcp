@@ -79,6 +79,8 @@ def main() -> None:
             source_code = read_from_path(fp=source_fp, is_json=False)
             # Read API keys
             api_keys = read_api_keys_from_env()
+            # API request timeout
+            timeout = 800
 
         # Initialize panels
         summary_panel = SummaryPanel(maximize=maximize, metric_name=metric_name, total_steps=steps, model=args.model)
@@ -102,6 +104,7 @@ def main() -> None:
             search_policy_config=search_policy_config,
             additional_instructions=additional_instructions,
             api_keys=api_keys,
+            timeout=timeout,
         )
 
         # Define the refresh rate
@@ -192,6 +195,7 @@ def main() -> None:
                     execution_output=term_out,
                     additional_instructions=additional_instructions,
                     api_keys=api_keys,
+                    timeout=timeout,
                 )
                 # Save next solution (.runs/<session-id>/step_<step>.py)
                 write_to_path(fp=runs_dir / f"step_{step}.py", content=eval_and_next_solution_response["code"])
@@ -201,7 +205,9 @@ def main() -> None:
 
                 # Get the optimization session status for
                 # the best solution, its score, and the history to plot the tree
-                status_response = get_optimization_session_status(console=console, session_id=session_id, include_history=True)
+                status_response = get_optimization_session_status(
+                    console=console, session_id=session_id, include_history=True, timeout=timeout
+                )
 
                 # Update the step of the progress bar
                 summary_panel.set_step(step=step)
@@ -281,6 +287,7 @@ def main() -> None:
                 execution_output=term_out,
                 additional_instructions=additional_instructions,
                 api_keys=api_keys,
+                timeout=timeout,
             )
 
             # Update the progress bar
@@ -290,7 +297,9 @@ def main() -> None:
             # No need to update the plan panel since we have finished the optimization
             # Get the optimization session status for
             # the best solution, its score, and the history to plot the tree
-            status_response = get_optimization_session_status(console=console, session_id=session_id, include_history=True)
+            status_response = get_optimization_session_status(
+                console=console, session_id=session_id, include_history=True, timeout=timeout
+            )
             # Build the metric tree
             tree_panel.build_metric_tree(nodes=status_response["history"])
             # No need to set any solution to unevaluated since we have finished the optimization

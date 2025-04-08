@@ -29,6 +29,7 @@ def start_optimization_session(
     search_policy_config: Dict[str, Any],
     additional_instructions: str = None,
     api_keys: Dict[str, Any] = {},
+    timeout: int = 800,
 ) -> Dict[str, Any]:
     """Start the optimization session."""
     with console.status("[bold green]Starting Optimization..."):
@@ -47,6 +48,7 @@ def start_optimization_session(
                     },
                     "metadata": {"client_name": "cli", "client_version": __pkg_version__, **api_keys},
                 },
+                timeout=timeout,
             )
             response.raise_for_status()
             return response.json()
@@ -60,6 +62,7 @@ def evaluate_feedback_then_suggest_next_solution(
     execution_output: str,
     additional_instructions: str = None,
     api_keys: Dict[str, Any] = {},
+    timeout: int = 800,
 ) -> Dict[str, Any]:
     """Evaluate the feedback and suggest the next solution."""
     try:
@@ -70,6 +73,7 @@ def evaluate_feedback_then_suggest_next_solution(
                 "additional_instructions": additional_instructions,
                 "metadata": {**api_keys},
             },
+            timeout=timeout,
         )
         response.raise_for_status()
         return response.json()
@@ -78,11 +82,13 @@ def evaluate_feedback_then_suggest_next_solution(
 
 
 def get_optimization_session_status(
-    console: rich.console.Console, session_id: str, include_history: bool = False
+    console: rich.console.Console, session_id: str, include_history: bool = False, timeout: int = 800
 ) -> Dict[str, Any]:
     """Get the current status of the optimization session."""
     try:
-        response = requests.get(f"{__base_url__}/sessions/{session_id}", params={"include_history": include_history})
+        response = requests.get(
+            f"{__base_url__}/sessions/{session_id}", params={"include_history": include_history}, timeout=timeout
+        )
         response.raise_for_status()
         return response.json()
     except requests.exceptions.HTTPError as e:
