@@ -12,7 +12,9 @@ class SummaryPanel:
     """Holds a summary of the optimization session."""
 
     def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, session_id: str = None):
-        self.goal = ("Maximizing" if maximize else "Minimizing") + f" {metric_name}..."
+        self.maximize = maximize
+        self.metric_name = metric_name
+        self.goal = ("Maximizing" if self.maximize else "Minimizing") + f" {self.metric_name}..."
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         self.total_steps = total_steps
@@ -39,24 +41,28 @@ class SummaryPanel:
         self.total_input_tokens += usage["input_tokens"]
         self.total_output_tokens += usage["output_tokens"]
 
-    def get_display(self) -> Panel:
+    def get_display(self, final_message: Optional[str] = None) -> Panel:
         """Create a summary panel with the relevant information."""
         layout = Layout(name="summary")
         summary_table = Table(show_header=False, box=None, padding=(0, 1))
         # Goal
-        summary_table.add_row(f"[bold cyan]Goal:[/] {self.goal}")
+        if final_message is not None:
+            summary_table.add_row(f"[bold cyan]Result:[/] {final_message}")
+        else:
+            summary_table.add_row(f"[bold cyan]Goal:[/] {self.goal}")
+        summary_table.add_row("")
+        # Model used
+        summary_table.add_row(f"[bold cyan]Model:[/] {self.model}")
         summary_table.add_row("")
         # Log directory
         runs_dir = f".runs/{self.session_id}"
         summary_table.add_row(f"[bold cyan]Logs:[/] [blue underline]{runs_dir}[/]")
         summary_table.add_row("")
-        # Model used
-        summary_table.add_row(f"[bold cyan]Model:[/] [yellow]{self.model}[/]")
-        summary_table.add_row("")
         # Token counts
         summary_table.add_row(
             f"[bold cyan]Tokens:[/] ↑[yellow]{format_number(self.total_input_tokens)}[/] ↓[yellow]{format_number(self.total_output_tokens)}[/] = [green]{format_number(self.total_input_tokens + self.total_output_tokens)}[/]"
         )
+        summary_table.add_row("")
         # Progress bar
         summary_table.add_row(self.progress)
 

@@ -321,7 +321,12 @@ def main() -> None:
             _, best_solution_panel = solution_panels.get_display(current_step=steps)
 
             # Update the end optimization layout
-            end_optimization_layout["summary"].update(summary_panel.get_display())
+            final_message = (
+                f"{summary_panel.metric_name.capitalize()} {'maximized' if summary_panel.maximize else 'minimized'}! Best solution {summary_panel.metric_name.lower()} = [green]{status_response['best_result']['metric_value']}[/] 🏆"
+                if best_solution_node is not None
+                else "[red] No solution found.[/]"
+            )
+            end_optimization_layout["summary"].update(summary_panel.get_display(final_message=final_message))
             end_optimization_layout["tree"].update(tree_panel.get_display())
             end_optimization_layout["best_solution"].update(best_solution_panel)
 
