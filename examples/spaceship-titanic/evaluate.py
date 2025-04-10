@@ -3,12 +3,14 @@ import pandas as pd
 from sklearn.metrics import accuracy_score
 from pathlib import Path
 
+
 class InvalidSubmissionError(Exception):
     """
     A custom exception for when the agent submission cannot be graded.
     """
 
     pass
+
 
 def prepare_for_accuracy_metric(
     submission: pd.DataFrame,
@@ -18,12 +20,16 @@ def prepare_for_accuracy_metric(
 ) -> dict:
 
     # Answers checks
-    assert target_column in answers.columns, f"Answers must have a `{target_column}` column"
+    assert (
+        target_column in answers.columns
+    ), f"Answers must have a `{target_column}` column"
     assert id_column in answers.columns, f"Answers must have a `{id_column}` column"
 
     # Submission checks
     if len(submission) != len(answers):
-        raise InvalidSubmissionError("Submission must have the same length as the answers.")
+        raise InvalidSubmissionError(
+            "Submission must have the same length as the answers."
+        )
     if target_column not in submission.columns:
         raise InvalidSubmissionError(f"Submission must have a `{target_column}` column")
     if id_column not in submission.columns:
@@ -34,16 +40,22 @@ def prepare_for_accuracy_metric(
     answers = answers.sort_values(id_column)
 
     if (submission[id_column].values != answers[id_column].values).any():
-        raise InvalidSubmissionError(f"Submission and Answers `{id_column}`'s do not match")
+        raise InvalidSubmissionError(
+            f"Submission and Answers `{id_column}`'s do not match"
+        )
 
     y_pred = submission[target_column].to_numpy()
     y_true = answers[target_column].to_numpy()
 
     return {"y_true": y_true, "y_pred": y_pred}
 
+
 def grade(submission: pd.DataFrame, answers: pd.DataFrame) -> float:
     accuracy_inputs = prepare_for_accuracy_metric(
-        submission=submission, answers=answers, target_column="Transported", id_column="PassengerId"
+        submission=submission,
+        answers=answers,
+        target_column="Transported",
+        id_column="PassengerId",
     )
     return accuracy_score(**accuracy_inputs)
 
@@ -58,7 +70,9 @@ if __name__ == "__main__":
 
     # Check if files exist before proceeding
     if not answers_path.exists():
-        print(f"Error: Answers file not found at {answers_path}") # Updated path in error message
+        print(
+            f"Error: Answers file not found at {answers_path}"
+        )  # Updated path in error message
         sys.exit(1)
 
     if not submission_path.exists():

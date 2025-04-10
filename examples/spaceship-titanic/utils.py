@@ -5,13 +5,14 @@ import kaggle
 import zipfile
 import os
 
+
 def prepare_data():
-    kaggle.api.competition_download_files('spaceship-titanic')
+    kaggle.api.competition_download_files("spaceship-titanic")
     # unzip the data
-    with zipfile.ZipFile('spaceship-titanic.zip', 'r') as zip_ref:
+    with zipfile.ZipFile("spaceship-titanic.zip", "r") as zip_ref:
         zip_ref.extractall()
     # remove the zip file
-    os.remove('spaceship-titanic.zip')
+    os.remove("spaceship-titanic.zip")
 
 
 def split_data(public: Path, private: Path):
@@ -31,11 +32,14 @@ def split_data(public: Path, private: Path):
     new_test.to_csv(private / "test.csv", index=False)
     print("test sample shape:", new_test.shape)
     print(f"Validation data saved to {public / 'test.csv'}")
-    new_test.drop("Transported", axis="columns").to_csv(public / "test.csv", index=False)
+    new_test.drop("Transported", axis="columns").to_csv(
+        public / "test.csv", index=False
+    )
 
     # remove the previous files
     os.remove("train.csv")
     os.remove("sample_submission.csv")
+
 
 def setup_data():
     # download the data
@@ -49,6 +53,6 @@ def setup_data():
     # split the data
     split_data(public_path, private_path)
 
+
 if __name__ == "__main__":
     setup_data()
-

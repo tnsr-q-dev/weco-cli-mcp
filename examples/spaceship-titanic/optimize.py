@@ -28,4 +28,3 @@ if __name__ == "__main__":
     # Call predict with the DataFrame and the correct output path
     predict(train_file_path, test_file_path, submission_output_path)
     print(f"Test submission saved to {submission_output_path}")
-    
