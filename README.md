@@ -139,6 +139,48 @@ Given how useful causal multihead self attention is to transformers, we've seen 
         --additional-instructions guide.md
    ```
 
+**Example 4: Optimizing a classification task**
+
+This example demonstrates optimizing a script for a Kaggle competition ([Spaceship Titanic](https://www.kaggle.com/competitions/spaceship-titanic/overview)) to improve classification accuracy. The additional instructions are provided via a separate file (`examples/spaceship-titanic/README.md`).
+
+First, install the requirements for the example environment:
+```bash
+pip install -r examples/spaceship-titanic/requirements-test.txt
+```
+And run utility function once to prepare the dataset
+```bash
+python examples/spaceship-titanic/utils.py
+```
+
+You should see the following structure at `examples/spaceship-titanic`. You need to prepare the kaggle credentials for downloading the dataset.
+```
+.
+├── baseline.py
+├── evaluate.py
+├── optimize.py
+├── private
+│   └── test.csv
+├── public
+│   ├── sample_submission.csv
+│   ├── test.csv
+│   └── train.csv
+├── README.md
+├── requirements-test.txt
+└── utils.py
+```
+
+Then, execute the optimization command:
+```bash
+weco --source examples/spaceship-titanic/optimize.py \
+     --eval-command "python examples/spaceship-titanic/optimize.py && python examples/spaceship-titanic/evaluate.py" \
+     --metric accuracy \
+     --maximize true \
+     --steps 10 \
+     --model o3-mini \
+     --additional-instructions examples/spaceship-titanic/README.md
+```
+
+*The [baseline.py](examples/spaceship-titanic/baseline.py) is provided as a start point for optimization*
 
 ---
 
