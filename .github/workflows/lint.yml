@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+  pull_request:  # Run on any pull request
 
 jobs:
   lint:
