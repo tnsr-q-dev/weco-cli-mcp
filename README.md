@@ -139,7 +139,7 @@ Given how useful causal multihead self attention is to transformers, we've seen 
         --additional-instructions guide.md
    ```
 
-**Example 4: Optimizing a classification task**
+**Example 4: Optimizing a Classification Model**
 
 This example demonstrates optimizing a script for a Kaggle competition ([Spaceship Titanic](https://www.kaggle.com/competitions/spaceship-titanic/overview)) to improve classification accuracy. The additional instructions are provided via a separate file (`examples/spaceship-titanic/README.md`).
 
