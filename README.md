@@ -77,31 +77,68 @@ Here's how `weco` can be applied to common ML engineering tasks:
 
 ### Examples
 
-**Example 1: Optimizing PyTorch operations**
+**Example 1: Optimizing PyTorch simple operations**
 
 ```bash
-weco --source examples/simple-torch/optimize.py \
-     --eval-command "python examples/simple-torch/evaluate.py --solution-path examples/simple-torch/optimize.py --device mps" \
+cd examples/hello-kernel-world
+pip install torch 
+weco --source optimize.py \
+     --eval-command "python evaluate.py --solution-path optimize.py --device cpu" \
      --metric speedup \
      --maximize true \
      --steps 15 \
-     --model o3-mini \
+     --model claude-3-7-sonnet-20250219 \
      --additional-instructions "Fuse operations in the forward method while ensuring the max float deviation remains small. Maintain the same format of the code."
 ```
 
+Note that if you have an NVIDIA gpu, change the device to `cuda`. If you are running this on Apple Silicon, set it to `mps`.
+
 **Example 2: Optimizing MLX operations with instructions from a file**
 
-Sometimes, additional context or instructions are too complex for a single command-line string. You can provide a path to a file containing these instructions.
+Lets optimize a 2D convolution operation in [`mlx`](https://github.com/ml-explore/mlx) using [Metal](https://developer.apple.com/documentation/metal/). Sometimes, additional context or instructions are too complex for a single command-line string. You can provide a path to a file containing these instructions.
 
 ```bash
-weco --source examples/simple-mlx/optimize.py \
-     --eval-command "python examples/simple-mlx/evaluate.py --solution-path examples/simple-mlx/optimize.py" \
+cd examples/metal
+pip install mlx
+weco --source optimize.py \
+     --eval-command "python evaluate.py --solution-path optimize.py" \
      --metric speedup \
      --maximize true \
      --steps 30 \
      --model o3-mini \
-     --additional-instructions examples/simple-mlx/metal-examples.rst
+     --additional-instructions examples.rst
 ```
+
+**Example 3: Level Agnostic Optimization: Causal Self Attention with Triton & CUDA**
+
+Given how useful causal multihead self attention is to transformers, we've seen its wide adoption across ML engineering and AI research. Its great to keep things at a high-level (in PyTorch) when doing research, but when moving to production you often need to write highly customized low-level kernels to make things run as fast as they can. The `weco` CLI can optimize kernels across a variety of different abstraction levels and frameworks. Example 2 uses Metal but lets explore two more frameworks:
+
+1. [Triton](https://github.com/triton-lang/triton)
+    ```bash
+   cd examples/triton
+   pip install torch triton
+   weco --source optimize.py \
+        --eval-command "python evaluate.py --solution-path optimize.py" \
+        --metric speedup \
+        --maximize true \
+        --steps 30 \
+        --model gemini-2.5-pro-preview-03-25 \
+        --additional-instructions "Use triton to optimize the code while ensuring a small max float diff. Maintain the same code format."
+   ```
+
+2. [CUDA](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html)
+   ```bash
+   cd examples/cuda
+   pip install torch
+   weco --source optimize.py \
+        --eval-command "python evaluate.py --solution-path optimize.py" \
+        --metric speedup \
+        --maximize true \
+        --steps 30 \
+        --model gemini-2.5-pro-preview-03-25 \
+        --additional-instructions guide.md
+   ```
+
 
 ---
 
