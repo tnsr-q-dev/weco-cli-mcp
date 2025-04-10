@@ -73,11 +73,12 @@ Here's how `weco` can be applied to common ML engineering tasks:
 
     To associate your optimization runs with your Weco account and view them on the Weco dashboard, you can log in. `weco` uses a device authentication flow:
 
-    - When you first run `weco run`, you'll be prompted if you want to log in.
-    - If you agree (by pressing `y` or `yes`), you'll be asked to visit a URL in your browser and authenticate.
-    - This saves a Weco-specific API key locally (typically at `~/.weco/api_key`).
+    - When you first run `weco run`, you'll be prompted if you want to log in or proceed anonymously.
+    - If you choose to log in (by pressing `l`), you'll be shown a URL and `weco` will attempt to open it in your default web browser.
+    - You then authenticate in the browser. Once authenticated, the CLI will detect this and complete the login.
+    - This saves a Weco-specific API key locally (typically at `~/.config/weco/credentials.json`).
 
-    If you choose not to log in (by pressing Enter or `n`), `weco` will still function using the environment variable LLM keys, but the run history will not be linked to a Weco account.
+    If you choose to skip login (by pressing Enter or `s`), `weco` will still function using the environment variable LLM keys, but the run history will not be linked to a Weco account.
 
     To log out and remove your saved Weco API key, use the `weco logout` command.
 
@@ -178,7 +179,7 @@ We welcome contributions! To get started:
 1.  **Fork and Clone the Repository:**
 
     ```bash
-    git clone https://github.com/WecoAI/weco-cli.gifully review @/weco/cli.py   and @/README.md  then update the readme to reflect changes.t
+    git clone https://github.com/WecoAI/weco-cli.git
     cd weco-cli
     ```
 
