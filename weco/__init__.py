@@ -1,4 +1,10 @@
+import os
+
 # DO NOT EDIT
 __pkg_version__ = "0.2.5"
 __api_version__ = "v1"
+
 __base_url__ = f"https://api.aide.weco.ai/{__api_version__}"
+# If user specifies a custom base URL, use that instead
+if os.environ.get("WECO_BASE_URL"):
+    __base_url__ = os.environ.get("WECO_BASE_URL")
