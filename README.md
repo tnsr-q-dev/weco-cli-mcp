@@ -206,7 +206,12 @@ The following plot from the independent [Research Engineering Benchmark (RE-Benc
 <p align="center">
 <img src="https://github.com/user-attachments/assets/ff0e471d-2f50-4e2d-b718-874862f533df" alt="RE-Bench Performance Across Time" width="60%"/>
 </p>
-*(Source: METR RE-Bench, Figure 5. AIDE (o1-preview) vs. Human Expert Percentiles)*
+
+<div align="center">
+   
+*(Source: METR RE-Bench, AIDE (o1-preview) vs. Human Expert Percentiles)*
+
+</div>
 
 As shown, AIDE demonstrates strong performance gains over time, surpassing lower human expert percentiles within hours and continuing to improve. This highlights the potential of evaluation-driven optimization but also indicates that reaching high levels of performance comparable to human experts on difficult benchmarks can take considerable time (tens of hours in this specific benchmark, corresponding to many `--steps` in the Weco CLI). Factor this into your planning when setting the number of `--steps` for your optimization runs.
 
