@@ -87,7 +87,7 @@ weco --source optimize.py \
      --metric speedup \
      --maximize true \
      --steps 15 \
-     --model claude-3-7-sonnet-20250219 \
+     --model gemini-2.5-pro-exp-03-25 \
      --additional-instructions "Fuse operations in the forward method while ensuring the max float deviation remains small. Maintain the same format of the code."
 ```
 
@@ -105,7 +105,7 @@ weco --source optimize.py \
      --metric speedup \
      --maximize true \
      --steps 30 \
-     --model o3-mini \
+     --model gemini-2.5-pro-exp-03-25 \
      --additional-instructions examples.rst
 ```
 
@@ -122,7 +122,7 @@ Given how useful causal multihead self attention is to transformers, we've seen 
         --metric speedup \
         --maximize true \
         --steps 30 \
-        --model gemini-2.5-pro-preview-03-25 \
+        --model gemini-2.5-pro-exp-03-25 \
         --additional-instructions "Use triton to optimize the code while ensuring a small max float diff. Maintain the same code format."
    ```
 
@@ -135,7 +135,7 @@ Given how useful causal multihead self attention is to transformers, we've seen 
         --metric speedup \
         --maximize true \
         --steps 30 \
-        --model gemini-2.5-pro-preview-03-25 \
+        --model gemini-2.5-pro-exp-03-25 \
         --additional-instructions guide.md
    ```
 
@@ -176,7 +176,7 @@ weco --source examples/spaceship-titanic/optimize.py \
      --metric accuracy \
      --maximize true \
      --steps 10 \
-     --model o3-mini \
+     --model gemini-2.5-pro-exp-03-25 \
      --additional-instructions examples/spaceship-titanic/README.md
 ```
 
