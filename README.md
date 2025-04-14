@@ -1,4 +1,4 @@
-# The AI Code Optimizer
+# Weco: The Evaluation-Driven AI Code Optimizer
 
 [![Python](https://img.shields.io/badge/Python-3.12.0-blue)](https://www.python.org)
 [![PyPI version](https://badge.fury.io/py/weco.svg)](https://badge.fury.io/py/weco)
