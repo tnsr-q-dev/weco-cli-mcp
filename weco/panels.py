@@ -20,7 +20,7 @@ class SummaryPanel:
         self.total_steps = total_steps
         self.model = model
         self.runs_dir = runs_dir
-        self.session_id = session_id or "N/A"
+        self.session_id = session_id if session_id is not None else "N/A"
         self.progress = Progress(
             TextColumn("[progress.description]{task.description}"),
             BarColumn(bar_width=20),
