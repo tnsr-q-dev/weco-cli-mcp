@@ -11,7 +11,7 @@ from .utils import format_number
 class SummaryPanel:
     """Holds a summary of the optimization session."""
 
-    def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, session_id: str = None):
+    def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, runs_dir: str, session_id: str = None):
         self.maximize = maximize
         self.metric_name = metric_name
         self.goal = ("Maximizing" if self.maximize else "Minimizing") + f" {self.metric_name}..."
@@ -19,6 +19,7 @@ class SummaryPanel:
         self.total_output_tokens = 0
         self.total_steps = total_steps
         self.model = model
+        self.runs_dir = runs_dir
         self.session_id = session_id or "N/A"
         self.progress = Progress(
             TextColumn("[progress.description]{task.description}"),
@@ -55,8 +56,7 @@ class SummaryPanel:
         summary_table.add_row(f"[bold cyan]Model:[/] {self.model}")
         summary_table.add_row("")
         # Log directory
-        runs_dir = f".runs/{self.session_id}"
-        summary_table.add_row(f"[bold cyan]Logs:[/] [blue underline]{runs_dir}[/]")
+        summary_table.add_row(f"[bold cyan]Logs:[/] [blue underline]{self.runs_dir}/{self.session_id}[/]")
         summary_table.add_row("")
         # Token counts
         summary_table.add_row(
