@@ -1,10 +1,15 @@
-# Weco CLI – Code Optimizer for Machine Learning Engineers
+# The AI Code Optimizer
 
 [![Python](https://img.shields.io/badge/Python-3.12.0-blue)](https://www.python.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PyPI version](https://badge.fury.io/py/weco.svg)](https://badge.fury.io/py/weco)
+[![AIDE](https://img.shields.io/badge/AI--Driven_Exploration-arXiv-orange?style=flat-square&logo=arxiv)](https://arxiv.org/abs/2502.13138)
 
-`weco` is a command-line interface for interacting with Weco AI's code optimizer, powered by [AI-Driven Exploration](https://arxiv.org/abs/2502.13138). It helps you automate the improvement of your code for tasks like GPU kernel optimization, feature engineering, model development, and prompt engineering.
+Weco systematically optimizes your code, guided directly by your evaluation metrics.
+Example applications include:
+
+- **GPU Kernel Optimization**: Reimplement PyTorch functions using CUDA, Triton or Metal, optimizing for `latency`, `throughput`, or `memory_bandwidth`.
+- **Model Development**: Tune feature transformations or architectures, optimizing for `validation_accuracy`, `AUC`, or `Sharpe Ratio`.
+- **Prompt Engineering**: Refine prompts for LLMs, optimizing for  `win_rate`, `relevance`, or `format_adherence`
 
 https://github.com/user-attachments/assets/cb724ef1-bff6-4757-b457-d3b2201ede81
 
@@ -17,37 +22,6 @@ The `weco` CLI leverages a tree search approach guided by Large Language Models 
 ![image](https://github.com/user-attachments/assets/a6ed63fa-9c40-498e-aa98-a873e5786509)
 
 ---
-
-## Example Use Cases
-
-Here's how `weco` can be applied to common ML engineering tasks:
-
-*   **GPU Kernel Optimization:**
-    *   **Goal:** Improve the speed or efficiency of low-level GPU code.
-    *   **How:** `weco` iteratively refines CUDA, Triton, Metal, or other kernel code specified in your `--source` file.
-    *   **`--eval-command`:** Typically runs a script that compiles the kernel, executes it, and benchmarks performance (e.g., latency, throughput).
-    *   **`--metric`:** Examples include `latency`, `throughput`, `TFLOPS`, `memory_bandwidth`. Optimize to `minimize` latency or `maximize` throughput.
-
-*   **Feature Engineering:**
-    *   **Goal:** Discover better data transformations or feature combinations for your machine learning models.
-    *   **How:** `weco` explores different processing steps or parameters within your feature transformation code (`--source`).
-    *   **`--eval-command`:** Executes a script that applies the features, trains/validates a model using those features, and prints a performance score.
-    *   **`--metric`:** Examples include `accuracy`, `AUC`, `F1-score`, `validation_loss`. Usually optimized to `maximize` accuracy/AUC/F1 or `minimize` loss.
-
-*   **Model Development:**
-    *   **Goal:** Tune hyperparameters or experiment with small architectural changes directly within your model's code.
-    *   **How:** `weco` modifies hyperparameter values (like learning rate, layer sizes if defined in the code) or structural elements in your model definition (`--source`).
-    *   **`--eval-command`:** Runs your model training and evaluation script, printing the key performance indicator.
-    *   **`--metric`:** Examples include `validation_accuracy`, `test_loss`, `inference_time`, `perplexity`. Optimize according to the metric's nature (e.g., `maximize` accuracy, `minimize` loss).
-
-*   **Prompt Engineering:**
-    *   **Goal:** Refine prompts used within larger systems (e.g., for LLM interactions) to achieve better or more consistent outputs.
-    *   **How:** `weco` modifies prompt templates, examples, or instructions stored in the `--source` file.
-    *   **`--eval-command`:** Executes a script that uses the prompt, generates an output, evaluates that output against desired criteria (e.g., using another LLM, checking for keywords, format validation), and prints a score.
-    *   **`--metric`:** Examples include `quality_score`, `relevance`, `task_success_rate`, `format_adherence`. Usually optimized to `maximize`.
-
----
-
 
 ## Setup
 
