@@ -51,6 +51,9 @@ def main() -> None:
     parser.add_argument("--steps", type=int, required=True, help="Number of steps to run")
     parser.add_argument("--model", type=str, required=True, help="Model to use for optimization")
     parser.add_argument(
+        "--log-dir", type=str, default=".runs", help="Directory to store logs and results"
+    )
+    parser.add_argument(
         "--additional-instructions",
         default=None,
         type=str,
@@ -83,7 +86,13 @@ def main() -> None:
             timeout = 800
 
         # Initialize panels
-        summary_panel = SummaryPanel(maximize=maximize, metric_name=metric_name, total_steps=steps, model=args.model)
+        summary_panel = SummaryPanel(
+            maximize=maximize,
+            metric_name=metric_name,
+            total_steps=steps,
+            model=args.model,
+            runs_dir=args.log_dir,
+        )
         plan_panel = PlanPanel()
         solution_panels = SolutionPanels(metric_name=metric_name)
         eval_output_panel = EvaluationOutputPanel()
@@ -112,7 +121,7 @@ def main() -> None:
         with Live(layout, refresh_per_second=refresh_rate, screen=True) as live:
             # Define the runs directory (.runs/<session-id>)
             session_id = session_response["session_id"]
-            runs_dir = pathlib.Path(".runs") / session_id
+            runs_dir = pathlib.Path(args.log_dir) / session_id
             runs_dir.mkdir(parents=True, exist_ok=True)
 
             # Save the original code (.runs/<session-id>/original.py)
