@@ -5,6 +5,7 @@
 [![AIDE](https://img.shields.io/badge/AI--Driven_Exploration-arXiv-orange?style=flat-square&logo=arxiv)](https://arxiv.org/abs/2502.13138)
 
 Weco systematically optimizes your code, guided directly by your evaluation metrics.
+
 Example applications include:
 
 - **GPU Kernel Optimization**: Reimplement PyTorch functions using CUDA, Triton or Metal, optimizing for `latency`, `throughput`, or `memory_bandwidth`.
