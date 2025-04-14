@@ -189,12 +189,13 @@ weco --source examples/spaceship-titanic/optimize.py \
 | Argument                    | Description                                                                                                                                                              | Required |
 | :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------- |
 | `--source`                  | Path to the source code file that will be optimized (e.g., `optimize.py`).                                                                                               | Yes      |
-| `--eval-command`            | Command to run for evaluating the code in `--source`. This command should print the target `--metric` and its value to the terminal (stdout/stderr). See note below. | Yes      |
-| `--metric`                  | The name of the metric you want to optimize (e.g., 'accuracy', 'speedup', 'loss'). This metric name should match what's printed by your `--eval-command`.            | Yes      |
+| `--eval-command`            | Command to run for evaluating the code in `--source`. This command should print the target `--metric` and its value to the terminal (stdout/stderr). See note below.     | Yes      |
+| `--metric`                  | The name of the metric you want to optimize (e.g., 'accuracy', 'speedup', 'loss'). This metric name should match what's printed by your `--eval-command`.                | Yes      |
 | `--maximize`                | Whether to maximize (`true`) or minimize (`false`) the metric.                                                                                                           | Yes      |
 | `--steps`                   | Number of optimization steps (LLM iterations) to run.                                                                                                                    | Yes      |
-| `--model`                   | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.5-sonnet`). Recommended models to try include `o3-mini`, `claude-3-haiku`, and `gemini-2.5-pro-exp-03-25`.        | Yes      |
-| `--additional-instructions` | (Optional) Natural language description of specific instructions OR path to a file containing detailed instructions to guide the LLM.                                       | No       |
+| `--model`                   | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.5-sonnet`). Recommended models to try include `o3-mini`, `claude-3-haiku`, and `gemini-2.5-pro-exp-03-25`.| Yes      |
+| `--additional-instructions` | (Optional) Natural language description of specific instructions OR path to a file containing detailed instructions to guide the LLM.                                    | No       |
+| `--log-dir`                 | (Optional) Path to the directory to log intermediate steps and final optimization result. Defaults to `.runs/`.                                                          | No       |
 
 ---
 
