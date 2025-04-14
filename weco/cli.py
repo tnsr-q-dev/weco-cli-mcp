@@ -50,9 +50,7 @@ def main() -> None:
     )
     parser.add_argument("--steps", type=int, required=True, help="Number of steps to run")
     parser.add_argument("--model", type=str, required=True, help="Model to use for optimization")
-    parser.add_argument(
-        "--log-dir", type=str, default=".runs", help="Directory to store logs and results"
-    )
+    parser.add_argument("--log-dir", type=str, default=".runs", help="Directory to store logs and results")
     parser.add_argument(
         "--additional-instructions",
         default=None,
@@ -87,11 +85,7 @@ def main() -> None:
 
         # Initialize panels
         summary_panel = SummaryPanel(
-            maximize=maximize,
-            metric_name=metric_name,
-            total_steps=steps,
-            model=args.model,
-            runs_dir=args.log_dir,
+            maximize=maximize, metric_name=metric_name, total_steps=steps, model=args.model, runs_dir=args.log_dir
         )
         plan_panel = PlanPanel()
         solution_panels = SolutionPanels(metric_name=metric_name)
