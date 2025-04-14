@@ -6,9 +6,7 @@ def predict(test: Path, save: Path):
     # TODO: Add a model here
 
     test_data = pd.read_csv(test)
-    submission = pd.DataFrame(
-        {"PassengerId": test_data["PassengerId"], "Transported": False}
-    )
+    submission = pd.DataFrame({"PassengerId": test_data["PassengerId"], "Transported": False})
     submission.to_csv(save, index=False)
     print(f"Test submission saved to {save}")
 

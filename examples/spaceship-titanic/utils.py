@@ -32,9 +32,7 @@ def split_data(public: Path, private: Path):
     new_test.to_csv(private / "test.csv", index=False)
     print("test sample shape:", new_test.shape)
     print(f"Validation data saved to {public / 'test.csv'}")
-    new_test.drop("Transported", axis="columns").to_csv(
-        public / "test.csv", index=False
-    )
+    new_test.drop("Transported", axis="columns").to_csv(public / "test.csv", index=False)
 
     # remove the previous files
     os.remove("train.csv")
