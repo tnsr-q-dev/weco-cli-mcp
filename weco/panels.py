@@ -6,6 +6,7 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from typing import Dict, List, Optional, Union, Tuple
 from .utils import format_number
+import pathlib
 
 
 class SummaryPanel:
@@ -46,6 +47,8 @@ class SummaryPanel:
         """Create a summary panel with the relevant information."""
         layout = Layout(name="summary")
         summary_table = Table(show_header=False, box=None, padding=(0, 1))
+
+        summary_table.add_row("")
         # Goal
         if final_message is not None:
             summary_table.add_row(f"[bold cyan]Result:[/] {final_message}")
@@ -256,13 +259,19 @@ class EvaluationOutputPanel:
 class SolutionPanels:
     """Displays the current and best solutions side by side."""
 
-    def __init__(self, metric_name: str):
+    def __init__(self, metric_name: str, source_fp: pathlib.Path):
         # Current solution
         self.current_node = None
         # Best solution
         self.best_node = None
         # Metric name
         self.metric_name = metric_name.capitalize()
+        # Determine the lexer for the source file
+        self.lexer = self._determine_lexer(source_fp)
+
+    def _determine_lexer(self, source_fp: pathlib.Path) -> str:
+        """Determine the lexer for the source file."""
+        return Syntax.from_path(source_fp).lexer
 
     def update(self, current_node: Union[Node, None], best_node: Union[Node, None]):
         """Update the current and best solutions."""
@@ -280,7 +289,7 @@ class SolutionPanels:
         # Current solution (without score)
         current_title = f"[bold]💡 Current Solution (Step {current_step})"
         current_panel = Panel(
-            Syntax(str(current_code), "python", theme="monokai", line_numbers=True, word_wrap=False),
+            Syntax(str(current_code), self.lexer, theme="monokai", line_numbers=True, word_wrap=False),
             title=current_title,
             border_style="yellow",
             expand=True,
@@ -290,7 +299,7 @@ class SolutionPanels:
         # Best solution
         best_title = f"[bold]🏆 Best Solution ([green]{self.metric_name}: {f'{best_score:.4f}' if best_score is not None else 'N/A'}[/])"
         best_panel = Panel(
-            Syntax(str(best_code), "python", theme="monokai", line_numbers=True, word_wrap=False),
+            Syntax(str(best_code), self.lexer, theme="monokai", line_numbers=True, word_wrap=False),
             title=best_title,
             border_style="green",
             expand=True,
