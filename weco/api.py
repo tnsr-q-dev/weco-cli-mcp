@@ -29,7 +29,7 @@ def start_optimization_session(
     search_policy_config: Dict[str, Any],
     additional_instructions: str = None,
     api_keys: Dict[str, Any] = {},
-    auth_headers: dict = {}, # Add auth_headers
+    auth_headers: dict = {},  # Add auth_headers
     timeout: int = 800,
 ) -> Dict[str, Any]:
     """Start the optimization session."""
@@ -37,7 +37,7 @@ def start_optimization_session(
         try:
             # __base_url__ already contains /v1
             response = requests.post(
-                f"{__base_url__}/sessions", # Path is relative to base_url
+                f"{__base_url__}/sessions",  # Path is relative to base_url
                 json={
                     "source_code": source_code,
                     "additional_instructions": additional_instructions,
@@ -50,7 +50,7 @@ def start_optimization_session(
                     },
                     "metadata": {"client_name": "cli", "client_version": __pkg_version__, **api_keys},
                 },
-                headers=auth_headers, # Add headers
+                headers=auth_headers,  # Add headers
                 timeout=timeout,
             )
             response.raise_for_status()
@@ -65,20 +65,20 @@ def evaluate_feedback_then_suggest_next_solution(
     execution_output: str,
     additional_instructions: str = None,
     api_keys: Dict[str, Any] = {},
-    auth_headers: dict = {}, # Add auth_headers
+    auth_headers: dict = {},  # Add auth_headers
     timeout: int = 800,
 ) -> Dict[str, Any]:
     """Evaluate the feedback and suggest the next solution."""
     try:
         # __base_url__ already contains /v1
         response = requests.post(
-            f"{__base_url__}/sessions/{session_id}/suggest", # Path is relative to base_url
+            f"{__base_url__}/sessions/{session_id}/suggest",  # Path is relative to base_url
             json={
                 "execution_output": execution_output,
-                "additional_instructions": additional_instructions, # Restore this field
+                "additional_instructions": additional_instructions,  # Restore this field
                 "metadata": {**api_keys},
             },
-            headers=auth_headers, # Add headers
+            headers=auth_headers,  # Add headers
             timeout=timeout,
         )
         response.raise_for_status()
@@ -88,16 +88,20 @@ def evaluate_feedback_then_suggest_next_solution(
 
 
 def get_optimization_session_status(
-    console: rich.console.Console, session_id: str, include_history: bool = False, auth_headers: dict = {}, timeout: int = 800 # Add auth_headers
+    console: rich.console.Console,
+    session_id: str,
+    include_history: bool = False,
+    auth_headers: dict = {},
+    timeout: int = 800,  # Add auth_headers
 ) -> Dict[str, Any]:
     """Get the current status of the optimization session."""
     try:
         # __base_url__ already contains /v1
         response = requests.get(
-            f"{__base_url__}/sessions/{session_id}", # Path is relative to base_url
+            f"{__base_url__}/sessions/{session_id}",  # Path is relative to base_url
             params={"include_history": include_history},
-            headers=auth_headers, # Add headers
-            timeout=timeout
+            headers=auth_headers,  # Add headers
+            timeout=timeout,
         )
         response.raise_for_status()
         return response.json()

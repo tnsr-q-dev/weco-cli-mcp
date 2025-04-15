@@ -7,12 +7,13 @@ import stat
 CONFIG_DIR = pathlib.Path.home() / ".config" / "weco"
 CREDENTIALS_FILE = CONFIG_DIR / "credentials.json"
 
+
 def ensure_config_dir():
     """Ensures the configuration directory exists."""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     # Ensure directory permissions are secure (optional but good practice)
     try:
-        os.chmod(CONFIG_DIR, stat.S_IRWXU) # Read/Write/Execute for owner only
+        os.chmod(CONFIG_DIR, stat.S_IRWXU)  # Read/Write/Execute for owner only
     except OSError as e:
         print(f"Warning: Could not set permissions on {CONFIG_DIR}: {e}")
 
@@ -29,7 +30,7 @@ def save_api_key(api_key: str):
     except IOError as e:
         print(f"Error: Could not write credentials file at {CREDENTIALS_FILE}: {e}")
     except OSError as e:
-         print(f"Warning: Could not set permissions on {CREDENTIALS_FILE}: {e}")
+        print(f"Warning: Could not set permissions on {CREDENTIALS_FILE}: {e}")
 
 
 def load_api_key() -> str | None:
@@ -39,9 +40,9 @@ def load_api_key() -> str | None:
     try:
         # Check permissions before reading (optional but safer)
         file_stat = os.stat(CREDENTIALS_FILE)
-        if file_stat.st_mode & (stat.S_IRWXG | stat.S_IRWXO): # Check if group/other have permissions
-             print(f"Warning: Credentials file {CREDENTIALS_FILE} has insecure permissions. Please set to 600.")
-             # Optionally, refuse to load or try to fix permissions
+        if file_stat.st_mode & (stat.S_IRWXG | stat.S_IRWXO):  # Check if group/other have permissions
+            print(f"Warning: Credentials file {CREDENTIALS_FILE} has insecure permissions. Please set to 600.")
+            # Optionally, refuse to load or try to fix permissions
 
         with open(CREDENTIALS_FILE, "r") as f:
             credentials = json.load(f)
@@ -49,6 +50,7 @@ def load_api_key() -> str | None:
     except (IOError, json.JSONDecodeError, OSError) as e:
         print(f"Warning: Could not read or parse credentials file at {CREDENTIALS_FILE}: {e}")
         return None
+
 
 def clear_api_key():
     """Removes the stored API key."""

@@ -10,7 +10,6 @@ from rich.live import Live
 from rich.panel import Panel
 from rich.traceback import install
 from rich.prompt import Prompt  # For user input
-from rich.spinner import Spinner  # For polling visual feedback
 from .api import (  # Keep existing imports
     start_optimization_session,
     evaluate_feedback_then_suggest_next_solution,
@@ -50,9 +49,7 @@ def perform_login(console: Console):
         # 1. Initiate device login
         console.print("Initiating login...")
         # __base_url__ already contains /v1
-        init_response = requests.post(
-            f"{__base_url__}/auth/device/initiate"
-        )  # REMOVED /v1 prefix
+        init_response = requests.post(f"{__base_url__}/auth/device/initiate")  # REMOVED /v1 prefix
         init_response.raise_for_status()
         init_data = init_response.json()
 
@@ -64,21 +61,17 @@ def perform_login(console: Console):
 
         # 2. Display instructions
         console.print("\n[bold yellow]Action Required:[/]")
-        console.print(f"Please open the following URL in your browser to authenticate:")
+        console.print("Please open the following URL in your browser to authenticate:")
         console.print(f"[link={verification_uri}]{verification_uri}[/link]")
         # if user_code:
         #     console.print(f"And enter the code: [bold cyan]{user_code}[/]")
         console.print(f"This request will expire in {expires_in // 60} minutes.")
-        console.print(
-            "Attempting to open the authentication page in your default browser..."
-        )  # Notify user
+        console.print("Attempting to open the authentication page in your default browser...")  # Notify user
 
         # Automatically open the browser
         try:
             if not webbrowser.open(verification_uri):
-                console.print(
-                    "[yellow]Could not automatically open the browser. Please open the link manually.[/]"
-                )
+                console.print("[yellow]Could not automatically open the browser. Please open the link manually.[/]")
         except Exception as browser_err:
             console.print(
                 f"[yellow]Could not automatically open the browser ({browser_err}). Please open the link manually.[/]"
@@ -90,9 +83,7 @@ def perform_login(console: Console):
         start_time = time.time()
         # Use a simple text update instead of Spinner within Live for potentially better compatibility
         polling_status = "Waiting..."
-        with Live(
-            polling_status, refresh_per_second=1, transient=True, console=console
-        ) as live_status:
+        with Live(polling_status, refresh_per_second=1, transient=True, console=console) as live_status:
             while True:
                 # Check for timeout
                 if time.time() - start_time > expires_in:
@@ -100,15 +91,12 @@ def perform_login(console: Console):
                     return False
 
                 time.sleep(interval)
-                live_status.update(f"Waiting... (checking status)")
+                live_status.update("Waiting... (checking status)")
 
                 try:
                     token_response = requests.post(
                         f"{__base_url__}/auth/device/token",  # REMOVED /v1 prefix
-                        json={
-                            "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
-                            "device_code": device_code,
-                        },
+                        json={"grant_type": "urn:ietf:params:oauth:grant-type:device_code", "device_code": device_code},
                     )
 
                     # Check for standard OAuth2 errors first (often 400 Bad Request)
@@ -116,41 +104,27 @@ def perform_login(console: Console):
                         token_data = token_response.json()
                         error_code = token_data.get("error", "unknown_error")
                         if error_code == "authorization_pending":
-                            live_status.update(f"Waiting... (authorization pending)")
+                            live_status.update("Waiting... (authorization pending)")
                             continue  # Continue polling
                         elif error_code == "slow_down":
                             interval += 5  # Increase polling interval if instructed
-                            live_status.update(
-                                f"Waiting... (slowing down polling to {interval}s)"
-                            )
+                            live_status.update(f"Waiting... (slowing down polling to {interval}s)")
                             continue
                         elif error_code == "expired_token":
-                            console.print(
-                                f"\n[bold red]Error:[/] Login request expired."
-                            )
+                            console.print("\n[bold red]Error:[/] Login request expired.")
                             return False
                         elif error_code == "access_denied":
-                            console.print(
-                                f"\n[bold red]Error:[/] Authorization denied by user."
-                            )
+                            console.print("\n[bold red]Error:[/] Authorization denied by user.")
                             return False
                         else:  # invalid_grant, etc.
-                            error_desc = token_data.get(
-                                "error_description", "Unknown error during polling."
-                            )
-                            console.print(
-                                f"\n[bold red]Error:[/] {error_desc} ({error_code})"
-                            )
+                            error_desc = token_data.get("error_description", "Unknown error during polling.")
+                            console.print(f"\n[bold red]Error:[/] {error_desc} ({error_code})")
                             return False
 
                     # Check specifically for 200 OK with "authorization_pending" error in JSON body
                     # (as implemented in the backend for RFC compliance)
-                    elif (
-                        token_response.status_code == 200
-                        and token_response.json().get("error")
-                        == "authorization_pending"
-                    ):
-                        live_status.update(f"Waiting... (authorization pending)")
+                    elif token_response.status_code == 200 and token_response.json().get("error") == "authorization_pending":
+                        live_status.update("Waiting... (authorization pending)")
                         continue
 
                     # Check for other non-400/non-200 HTTP errors
@@ -165,24 +139,18 @@ def perform_login(console: Console):
                         return True
                     else:
                         # Unexpected successful response format
-                        console.print(
-                            "\n[bold red]Error:[/] Received unexpected response from server during polling."
-                        )
+                        console.print("\n[bold red]Error:[/] Received unexpected response from server during polling.")
                         print(token_data)  # Log for debugging
                         return False
 
                 except requests.exceptions.RequestException as e:
                     # Handle network errors during polling gracefully
-                    live_status.update(f"Waiting... (network error, retrying)")
-                    console.print(
-                        f"\n[bold yellow]Warning:[/] Network error during polling: {e}. Retrying..."
-                    )
+                    live_status.update("Waiting... (network error, retrying)")
+                    console.print(f"\n[bold yellow]Warning:[/] Network error during polling: {e}. Retrying...")
                     # Optional: implement backoff strategy
                     time.sleep(interval * 2)  # Simple backoff
 
-    except (
-        requests.exceptions.HTTPError
-    ) as e:  # Catch HTTPError specifically for handle_api_error
+    except requests.exceptions.HTTPError as e:  # Catch HTTPError specifically for handle_api_error
         handle_api_error(e, console)
     except requests.exceptions.RequestException as e:  # Catch other request errors
         console.print(f"\n[bold red]Network Error:[/] {e}")
@@ -196,36 +164,21 @@ def main() -> None:
     """Main function for the Weco CLI."""
     # --- Argument Parsing ---
     parser = argparse.ArgumentParser(
-        description="[bold cyan]Weco CLI[/]",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="[bold cyan]Weco CLI[/]", formatter_class=argparse.RawDescriptionHelpFormatter
     )
     # Add subparsers for commands like 'run' and 'logout'
-    subparsers = parser.add_subparsers(
-        dest="command", help="Available commands", required=True
-    )  # Make command required
+    subparsers = parser.add_subparsers(dest="command", help="Available commands", required=True)  # Make command required
 
     # --- Run Command ---
     run_parser = subparsers.add_parser(
-        "run",
-        help="Run code optimization",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        "run", help="Run code optimization", formatter_class=argparse.RawDescriptionHelpFormatter
     )
     # Add arguments specific to the 'run' command to the run_parser
+    run_parser.add_argument("--source", type=str, required=True, help="Path to the Python source code (e.g. optimize.py)")
     run_parser.add_argument(
-        "--source",
-        type=str,
-        required=True,
-        help="Path to the Python source code (e.g. optimize.py)",
+        "--eval-command", type=str, required=True, help="Command to run for evaluation (e.g. 'python eval.py --arg1=val1')"
     )
-    run_parser.add_argument(
-        "--eval-command",
-        type=str,
-        required=True,
-        help="Command to run for evaluation (e.g. 'python eval.py --arg1=val1')",
-    )
-    run_parser.add_argument(
-        "--metric", type=str, required=True, help="Metric to optimize"
-    )
+    run_parser.add_argument("--metric", type=str, required=True, help="Metric to optimize")
     run_parser.add_argument(
         "--maximize",
         type=str,
@@ -233,21 +186,14 @@ def main() -> None:
         required=True,
         help="Specify 'true' to maximize the metric or 'false' to minimize.",
     )
-    run_parser.add_argument(
-        "--steps", type=int, required=True, help="Number of steps to run"
-    )
-    run_parser.add_argument(
-        "--model", type=str, required=True, help="Model to use for optimization"
-    )
+    run_parser.add_argument("--steps", type=int, required=True, help="Number of steps to run")
+    run_parser.add_argument("--model", type=str, required=True, help="Model to use for optimization")
     run_parser.add_argument(
         "--additional-instructions",
         default=None,
         type=str,
         help="Description of additional instruction or path to a file containing additional instructions",
     )
-
-    # --- Logout Command ---
-    logout_parser = subparsers.add_parser("logout", help="Log out from Weco")
 
     args = parser.parse_args()
 
@@ -278,18 +224,12 @@ def main() -> None:
                     sys.exit(1)  # Exit if login failed
                 weco_api_key = load_api_key()  # Reload key after successful login
                 if not weco_api_key:  # Check if key was actually saved
-                    console.print(
-                        "[bold red]Error: Login completed but failed to retrieve API key.[/]"
-                    )
+                    console.print("[bold red]Error: Login completed but failed to retrieve API key.[/]")
                     sys.exit(1)
-                console.print(
-                    "[green]Login successful. Proceeding with authenticated run.[/]"
-                )
+                console.print("[green]Login successful. Proceeding with authenticated run.[/]")
 
             elif login_choice == "s":  # User chose to skip
-                console.print(
-                    "[yellow]Proceeding anonymously. LLM API keys must be provided via environment variables.[/]"
-                )
+                console.print("[yellow]Proceeding anonymously. LLM API keys must be provided via environment variables.[/]")
                 if not llm_api_keys:
                     console.print(
                         "[bold red]Error:[/] No LLM API keys found in environment (e.g., OPENAI_API_KEY). Cannot proceed anonymously."
@@ -320,20 +260,13 @@ def main() -> None:
                 "debug_prob": 0.5,
                 "max_debug_depth": max(1, math.ceil(0.1 * steps)),
             }
-            additional_instructions = read_additional_instructions(
-                additional_instructions=args.additional_instructions
-            )
+            additional_instructions = read_additional_instructions(additional_instructions=args.additional_instructions)
             source_fp = pathlib.Path(args.source)
             source_code = read_from_path(fp=source_fp, is_json=False)
             timeout = 800
 
             # --- Panel Initialization ---
-            summary_panel = SummaryPanel(
-                maximize=maximize,
-                metric_name=metric_name,
-                total_steps=steps,
-                model=args.model,
-            )
+            summary_panel = SummaryPanel(maximize=maximize, metric_name=metric_name, total_steps=steps, model=args.model)
             plan_panel = PlanPanel()
             solution_panels = SolutionPanels(metric_name=metric_name)
             eval_output_panel = EvaluationOutputPanel()
@@ -397,9 +330,7 @@ def main() -> None:
                     ),
                     best_node=None,
                 )
-                current_solution_panel, best_solution_panel = (
-                    solution_panels.get_display(current_step=0)
-                )
+                current_solution_panel, best_solution_panel = solution_panels.get_display(current_step=0)
 
                 smooth_update(
                     live=live,
@@ -420,9 +351,7 @@ def main() -> None:
                 smooth_update(
                     live=live,
                     layout=layout,
-                    sections_to_update=[
-                        ("eval_output", eval_output_panel.get_display())
-                    ],
+                    sections_to_update=[("eval_output", eval_output_panel.get_display())],
                     transition_delay=0.1,
                 )
 
@@ -431,29 +360,21 @@ def main() -> None:
                     if step > 0:
                         term_out = run_evaluation(eval_command=args.eval_command)
                         eval_output_panel.update(output=term_out)
-                        smooth_update(
-                            live,
-                            layout,
-                            [("eval_output", eval_output_panel.get_display())],
-                        )
+                        smooth_update(live, layout, [("eval_output", eval_output_panel.get_display())])
 
                     is_last_evaluation = step == steps - 1
 
-                    eval_and_next_solution_response = (
-                        evaluate_feedback_then_suggest_next_solution(
-                            console=console,
-                            session_id=session_id,
-                            execution_output=term_out,
-                            additional_instructions=additional_instructions,
-                            api_keys=metadata_keys,  # Pass client LLM keys
-                            auth_headers=auth_headers,  # Pass Weco key if logged in
-                            timeout=timeout,
-                        )
+                    eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
+                        console=console,
+                        session_id=session_id,
+                        execution_output=term_out,
+                        additional_instructions=additional_instructions,
+                        api_keys=metadata_keys,  # Pass client LLM keys
+                        auth_headers=auth_headers,  # Pass Weco key if logged in
+                        timeout=timeout,
                     )
 
-                    summary_panel.update_token_counts(
-                        usage=eval_and_next_solution_response["usage"]
-                    )
+                    summary_panel.update_token_counts(usage=eval_and_next_solution_response["usage"])
                     status_response = get_optimization_session_status(
                         console=console,
                         session_id=session_id,
@@ -472,16 +393,10 @@ def main() -> None:
                             is_buggy=status_response["best_result"]["is_buggy"],
                         )
 
-                    if is_last_evaluation or eval_and_next_solution_response.get(
-                        "is_done", False
-                    ):
+                    if is_last_evaluation or eval_and_next_solution_response.get("is_done", False):
                         summary_panel.set_step(step=steps)
-                        solution_panels.update(
-                            current_node=None, best_node=best_solution_node
-                        )
-                        _, best_solution_panel = solution_panels.get_display(
-                            current_step=steps
-                        )
+                        solution_panels.update(current_node=None, best_node=best_solution_node)
+                        _, best_solution_panel = solution_panels.get_display(current_step=steps)
                         smooth_update(
                             live=live,
                             layout=layout,
@@ -489,13 +404,7 @@ def main() -> None:
                                 ("summary", summary_panel.get_display()),
                                 ("tree", tree_panel.get_display()),
                                 ("best_solution", best_solution_panel),
-                                (
-                                    "current_solution",
-                                    Panel(
-                                        "Optimization Complete",
-                                        title="Current Solution",
-                                    ),
-                                ),
+                                ("current_solution", Panel("Optimization Complete", title="Current Solution")),
                                 ("plan", Panel("Optimization Complete", title="Plan")),
                             ],
                             transition_delay=0.1,
@@ -504,23 +413,16 @@ def main() -> None:
 
                     # Prepare for next iteration
                     next_solution_code = eval_and_next_solution_response["code"]
-                    write_to_path(
-                        fp=runs_dir / f"step_{step + 1}.py", content=next_solution_code
-                    )
+                    write_to_path(fp=runs_dir / f"step_{step + 1}.py", content=next_solution_code)
                     write_to_path(fp=source_fp, content=next_solution_code)
 
                     summary_panel.set_step(step=step + 1)
                     plan_panel.update(plan=eval_and_next_solution_response["plan"])
-                    tree_panel.set_unevaluated_node(
-                        node_id=eval_and_next_solution_response["solution_id"]
-                    )
+                    tree_panel.set_unevaluated_node(node_id=eval_and_next_solution_response["solution_id"])
 
                     current_solution_node = None
                     for node_data in status_response["history"]:
-                        if (
-                            node_data["solution_id"]
-                            == eval_and_next_solution_response["solution_id"]
-                        ):
+                        if node_data["solution_id"] == eval_and_next_solution_response["solution_id"]:
                             current_solution_node = Node(
                                 id=node_data["solution_id"],
                                 parent_id=node_data["parent_id"],
@@ -541,12 +443,8 @@ def main() -> None:
                             is_buggy=False,
                         )
 
-                    solution_panels.update(
-                        current_node=current_solution_node, best_node=best_solution_node
-                    )
-                    current_solution_panel, best_solution_panel = (
-                        solution_panels.get_display(current_step=step + 1)
-                    )
+                    solution_panels.update(current_node=current_solution_node, best_node=best_solution_node)
+                    current_solution_panel, best_solution_panel = solution_panels.get_display(current_step=step + 1)
 
                     eval_output_panel.clear()
                     smooth_update(
@@ -566,40 +464,33 @@ def main() -> None:
 
                 # --- Post-Loop Processing ---
                 if best_solution_node:
-                    solution_panels.update(
-                        current_node=None, best_node=best_solution_node
-                    )
-                    _, best_solution_panel = solution_panels.get_display(
-                        current_step=steps
-                    )
+                    solution_panels.update(current_node=None, best_node=best_solution_node)
+                    _, best_solution_panel = solution_panels.get_display(current_step=steps)
                 else:
                     best_solution_panel = Panel(
-                        "[italic]No improvement found.[/]",
-                        title=f"Best Solution ({metric_name})",
-                        border_style="dim",
+                        "[italic]No improvement found.[/]", title=f"Best Solution ({metric_name})", border_style="dim"
                     )
 
                 end_optimization_layout["summary"].update(summary_panel.get_display())
                 end_optimization_layout["tree"].update(tree_panel.get_display())
                 end_optimization_layout["best_solution"].update(best_solution_panel)
 
-                best_solution_code = (
-                    best_solution_node.code if best_solution_node else None
-                )
-                best_solution_score = (
-                    best_solution_node.metric if best_solution_node else None
-                )
+                best_solution_code = best_solution_node.code if best_solution_node else None
+                best_solution_score = best_solution_node.metric if best_solution_node else None
 
                 if best_solution_code is None or best_solution_score is None:
-                    best_solution_content = f"# Weco could not find a better solution\n\n{read_from_path(fp=runs_copy_source_fp, is_json=False)}"
+                    best_solution_content = (
+                        f"# Weco could not find a better solution\n\n{read_from_path(fp=runs_copy_source_fp, is_json=False)}"
+                    )
                 else:
                     best_score_str = (
                         format_number(best_solution_score)
-                        if best_solution_score is not None
-                        and isinstance(best_solution_score, (int, float))
+                        if best_solution_score is not None and isinstance(best_solution_score, (int, float))
                         else "N/A"
                     )
-                    best_solution_content = f"# Best solution from Weco with a score of {best_score_str}\n\n{best_solution_code}"
+                    best_solution_content = (
+                        f"# Best solution from Weco with a score of {best_score_str}\n\n{best_solution_code}"
+                    )
 
                 write_to_path(fp=runs_dir / "best.py", content=best_solution_content)
                 write_to_path(fp=source_fp, content=best_solution_content)
@@ -608,13 +499,7 @@ def main() -> None:
             # --- End of the main execution block within try ---
 
         except Exception as e:
-            console.print(
-                Panel(
-                    f"[bold red]Error: {str(e)}",
-                    title="[bold red]Error",
-                    border_style="red",
-                )
-            )
+            console.print(Panel(f"[bold red]Error: {str(e)}", title="[bold red]Error", border_style="red"))
             # Print traceback for debugging
             console.print_exception(show_locals=True)
             sys.exit(1)
