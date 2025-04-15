@@ -6,14 +6,9 @@ import sys
 
 
 def handle_api_error(e: requests.exceptions.HTTPError, console: rich.console.Console) -> None:
-    """Extract and display error messages from API responses."""
-    try:
-        error_data = e.response.json()
-        error_message = error_data.get("detail", str(e))
-        console.print(f"[bold red]Server Error:[/] {error_message}")
-    except Exception:
-        # If we can't parse the JSON, just show the original error
-        console.print(f"[bold red]Server Error:[/] {str(e)}")
+    """Extract and display error messages from API responses in a structured format."""
+    error_message = str(e)  # Default message
+    console.print(f"[bold red]Error:[/] {error_message}")
     sys.exit(1)
 
 

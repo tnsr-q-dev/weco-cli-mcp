@@ -36,7 +36,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="[bold cyan]Weco CLI[/]", formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("--source", type=str, required=True, help="Path to the Python source code (e.g. optimize.py)")
+    parser.add_argument("--source", type=str, required=True, help="Path to the source code (e.g. optimize.py)")
     parser.add_argument(
         "--eval-command", type=str, required=True, help="Command to run for evaluation (e.g. 'python eval.py --arg1=val1')"
     )
@@ -88,7 +88,7 @@ def main() -> None:
             maximize=maximize, metric_name=metric_name, total_steps=steps, model=args.model, runs_dir=args.log_dir
         )
         plan_panel = PlanPanel()
-        solution_panels = SolutionPanels(metric_name=metric_name)
+        solution_panels = SolutionPanels(metric_name=metric_name, source_fp=source_fp)
         eval_output_panel = EvaluationOutputPanel()
         tree_panel = MetricTreePanel(maximize=maximize)
         layout = create_optimization_layout()
@@ -118,8 +118,8 @@ def main() -> None:
             runs_dir = pathlib.Path(args.log_dir) / session_id
             runs_dir.mkdir(parents=True, exist_ok=True)
 
-            # Save the original code (.runs/<session-id>/original.py)
-            runs_copy_source_fp = runs_dir / "original.py"
+            # Save the original code (.runs/<session-id>/original.<extension>)
+            runs_copy_source_fp = runs_dir / f"original.{source_fp.suffix}"
             write_to_path(fp=runs_copy_source_fp, content=source_code)
 
             # Write the code string to the source file path
@@ -200,8 +200,8 @@ def main() -> None:
                     api_keys=api_keys,
                     timeout=timeout,
                 )
-                # Save next solution (.runs/<session-id>/step_<step>.py)
-                write_to_path(fp=runs_dir / f"step_{step}.py", content=eval_and_next_solution_response["code"])
+                # Save next solution (.runs/<session-id>/step_<step>.<extension>)
+                write_to_path(fp=runs_dir / f"step_{step}.{source_fp.suffix}", content=eval_and_next_solution_response["code"])
 
                 # Write the next solution to the source file
                 write_to_path(fp=source_fp, content=eval_and_next_solution_response["code"])
@@ -351,8 +351,8 @@ def main() -> None:
                 )
                 best_solution_content = f"# Best solution from Weco with a score of {best_score_str}\n\n{best_solution_code}"
 
-            # Save best solution to .runs/<session-id>/best.py
-            write_to_path(fp=runs_dir / "best.py", content=best_solution_content)
+            # Save best solution to .runs/<session-id>/best.<extension>
+            write_to_path(fp=runs_dir / f"best.{source_fp.suffix}", content=best_solution_content)
 
             # write the best solution to the source file
             write_to_path(fp=source_fp, content=best_solution_content)
