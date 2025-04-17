@@ -6,8 +6,8 @@ Weco edits the EXTRA_INSTRUCTIONS string to search for better prompts.
 
 from openai import OpenAI
 
-client = OpenAI()          # API key must be in OPENAI_API_KEY
-MODEL = "gpt-4o-mini"      # change if you have another model
+client = OpenAI()  # API key must be in OPENAI_API_KEY
+MODEL = "gpt-4o-mini"  # change if you have another model
 
 PROMPT_TEMPLATE = """You are an expert competition mathematician.
 Solve the following AIME problem.
@@ -28,13 +28,6 @@ EXTRA_INSTRUCTIONS = "Use bullet points in the scratch work."
 
 def solve(problem: str) -> str:
     """Return the model's raw text answer for one problem."""
-    prompt = PROMPT_TEMPLATE.format(
-        problem=problem,
-        extra_instructions=EXTRA_INSTRUCTIONS,
-    )
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0,
-    )
+    prompt = PROMPT_TEMPLATE.format(problem=problem, extra_instructions=EXTRA_INSTRUCTIONS)
+    response = client.chat.completions.create(model=MODEL, messages=[{"role": "user", "content": prompt}], temperature=0)
     return response.choices[0].message.content.strip()
