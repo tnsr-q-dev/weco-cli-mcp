@@ -89,6 +89,7 @@ weco --source optimize.py \
 | `--model`                   | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.7-sonnet`). Recommended models to try include `o4-mini`, and `gemini-2.5-pro-exp-03-25`.| Yes      |
 | `--additional-instructions` | (Optional) Natural language description of specific instructions OR path to a file containing detailed instructions to guide the LLM.                                    | No       |
 | `--log-dir`                 | (Optional) Path to the directory to log intermediate steps and final optimization result. Defaults to `.runs/`.                                                          | No       |
+| `--preserve-source`         | (Optional) If set, do not overwrite the original `--source` file. Modifications and the best solution will still be saved in the `--log-dir`.                                | No       |
 
 ---
 

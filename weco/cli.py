@@ -57,6 +57,7 @@ def main() -> None:
         type=str,
         help="Description of additional instruction or path to a file containing additional instructions",
     )
+    parser.add_argument("--preserve-source", action="store_true", help="If set, do not overwrite the original source file; only save modified versions in the runs directory")
     args = parser.parse_args()
 
     try:
@@ -124,7 +125,8 @@ def main() -> None:
 
             # Write the code string to the source file path
             # Do this after the original code is saved
-            write_to_path(fp=source_fp, content=session_response["code"])
+            if not args.preserve_source:
+                write_to_path(fp=source_fp, content=session_response["code"])
 
             # Update the panels with the initial solution
             # Add session id now that we have it
@@ -204,7 +206,8 @@ def main() -> None:
                 write_to_path(fp=runs_dir / f"step_{step}.{source_fp.suffix}", content=eval_and_next_solution_response["code"])
 
                 # Write the next solution to the source file
-                write_to_path(fp=source_fp, content=eval_and_next_solution_response["code"])
+                if not args.preserve_source:
+                    write_to_path(fp=source_fp, content=eval_and_next_solution_response["code"])
 
                 # Get the optimization session status for
                 # the best solution, its score, and the history to plot the tree
@@ -355,7 +358,8 @@ def main() -> None:
             write_to_path(fp=runs_dir / f"best.{source_fp.suffix}", content=best_solution_content)
 
             # write the best solution to the source file
-            write_to_path(fp=source_fp, content=best_solution_content)
+            if not args.preserve_source:
+                write_to_path(fp=source_fp, content=best_solution_content)
 
         console.print(end_optimization_layout)
 
