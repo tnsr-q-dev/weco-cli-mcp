@@ -54,7 +54,7 @@ The `weco` CLI leverages a tree search approach guided by Large Language Models 
 
 This basic example shows how to optimize a simple PyTorch function for speedup.
 
-For more advanced examples, including **[Metal/MLX](/examples/metal/README.md), [Triton](/examples/triton/README.md), [CUDA kernel optimization](/examples/cuda/README.md)**, and **[ML model optimization](/examples/spaceship-titanic/README.md)t**, please see the `README.md` files within the corresponding subdirectories under the [`examples/`](./examples/) folder.
+For more advanced examples, including **[Metal/MLX](/examples/metal/README.md), [Triton](/examples/triton/README.md), [CUDA kernel optimization](/examples/cuda/README.md)**, and **[ML model optimization](/examples/spaceship-titanic/README.md)**, please see the `README.md` files within the corresponding subdirectories under the [`examples/`](./examples/) folder.
 
 ```bash
 # Navigate to the example directory
@@ -86,7 +86,7 @@ weco --source optimize.py \
 | `--metric`                  | The name of the metric you want to optimize (e.g., 'accuracy', 'speedup', 'loss'). This metric name should match what's printed by your `--eval-command`.                | Yes      |
 | `--maximize`                | Whether to maximize (`true`) or minimize (`false`) the metric.                                                                                                           | Yes      |
 | `--steps`                   | Number of optimization steps (LLM iterations) to run.                                                                                                                    | Yes      |
-| `--model`                   | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.5-sonnet`). Recommended models to try include `o3-mini`, `claude-3-haiku`, and `gemini-2.5-pro-exp-03-25`.| Yes      |
+| `--model`                   | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.7-sonnet`). Recommended models to try include `o4-mini`, and `gemini-2.5-pro-exp-03-25`.| Yes      |
 | `--additional-instructions` | (Optional) Natural language description of specific instructions OR path to a file containing detailed instructions to guide the LLM.                                    | No       |
 | `--log-dir`                 | (Optional) Path to the directory to log intermediate steps and final optimization result. Defaults to `.runs/`.                                                          | No       |
 
