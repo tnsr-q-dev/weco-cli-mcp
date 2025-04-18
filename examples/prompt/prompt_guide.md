@@ -29,16 +29,17 @@ The primary goal is to enhance the model's reasoning process for these challengi
 
 **Ideas to Explore:**
 You don't have to implement all of them, but the following ideas might be helpful:
-*   **Explicit Workflow Definition:**
-    *   Define a clear step-by-step thinking process within the prompt template itself. E.g., "1. Understand the problem constraints. 2. Identify relevant theorems/formulas. 3. Formulate a plan. 4. Execute calculations step-by-step. 5. Verify intermediate results. 6. State the final answer in the required format."
-    *   Use headings or numbered lists within the template to guide the model's output structure during reasoning.
-*   **Advanced CoT Techniques:**
+*   **Workflow Patterns:**
+    *  **Linear**: step-by-step thinking process could be a good starting point E.g., "1. Understand the problem constraints. 2. Identify relevant theorems/formulas. 3. Formulate a plan. 4. Execute calculations step-by-step. 5. Verify intermediate results. 6. State the final answer in the required format."
+    *  **List Candidates**: You can ask the model to propose a few solutions in a particular step and pick the best solution. You can potentially also set the criterias in the prompt.
+    *  **Code** Write pesudo code to define even more complex workflows with loops, conditional statement, or go to statement.
+*   **Other CoT Techniques:**
     *   Self-Correction/Reflection
     *   Plan Generation
-    *   Simulated Multi-Path Exploration (within the prompt):
-    *   Write pesudo code to define complex workflows
     *   Debate, simulating multiple characters
+    *   Tree of thought
 *   **Few-Shot Examples:** You *could* experiment with adding 1-2 high-quality AIME problem/solution examples directly into the `PROMPT_TEMPLATE` string (similar to how Weco attempted in one of the runs). Ensure the examples clearly show the desired reasoning style and the final `\boxed{XXX}` format. *Caution: This significantly increases prompt length and cost.*
+*   **Play with format:** The way you format the prompt. Markdown, xml, json, code or natural language. Similarly for the thinking tokens themselves you can also try out different formats.
 
 ## 5. Constraints
 *   **Ensure the final output reliably contains `\boxed{XXX}` as the evaluation script depends on it.**
