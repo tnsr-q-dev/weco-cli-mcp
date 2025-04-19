@@ -195,6 +195,9 @@ def main() -> None:
         help="Description of additional instruction or path to a file containing additional instructions",
     )
 
+    # ADD THE LOGOUT PARSER DEFINITION HERE
+    logout_parser = subparsers.add_parser("logout", help="Log out from Weco and clear saved API key.")  # noqa F841
+
     args = parser.parse_args()
 
     # --- Handle Logout Command ---
