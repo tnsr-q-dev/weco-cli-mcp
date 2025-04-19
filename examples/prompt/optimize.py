@@ -22,12 +22,13 @@ Problem:
 Solution:
 """
 
+
 def solve(problem: str, model_name: str) -> str:
     """Return the model's raw text answer for one problem using the specified model."""
     prompt = PROMPT_TEMPLATE.format(problem=problem)
 
     response = client.chat.completions.create(
-        model=model_name, # Use the passed-in model name
+        model=model_name,  # Use the passed-in model name
         messages=[{"role": "user", "content": prompt}],
     )
     return response.choices[0].message.content.strip()

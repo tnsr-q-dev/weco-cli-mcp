@@ -57,7 +57,11 @@ def main() -> None:
         type=str,
         help="Description of additional instruction or path to a file containing additional instructions",
     )
-    parser.add_argument("--preserve-source", action="store_true", help="If set, do not overwrite the original source file; only save modified versions in the runs directory")
+    parser.add_argument(
+        "--preserve-source",
+        action="store_true",
+        help="If set, do not overwrite the original source file; only save modified versions in the runs directory",
+    )
     args = parser.parse_args()
 
     try:
@@ -195,7 +199,9 @@ def main() -> None:
 
             for step in range(1, steps):
                 # Re-read instructions from the original source (file path or string) BEFORE each suggest call
-                current_additional_instructions = read_additional_instructions(additional_instructions=args.additional_instructions)
+                current_additional_instructions = read_additional_instructions(
+                    additional_instructions=args.additional_instructions
+                )
                 # Evaluate the current output and get the next solution
                 eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
                     console=console,
@@ -290,7 +296,9 @@ def main() -> None:
                 )
 
             # Re-read instructions before the final feedback step
-            current_additional_instructions = read_additional_instructions(additional_instructions=args.additional_instructions)
+            current_additional_instructions = read_additional_instructions(
+                additional_instructions=args.additional_instructions
+            )
             # Ensure we pass evaluation results for the last step's generated solution
             eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
                 console=console,

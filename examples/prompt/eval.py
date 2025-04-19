@@ -22,7 +22,7 @@ import optimize  # the file Weco mutates
 TOTAL_SAMPLES = 30  # how many problems to load
 NUM_WORKERS = 30  # concurrent LLM calls
 LOG_EVERY = 5  # print progress after this many
-MODEL_TO_USE = "gpt-4.1" # Define the model to use HERE
+MODEL_TO_USE = "gpt-4.1"  # Define the model to use HERE
 TASK_TIMEOUT = 300  # seconds per LLM call
 # ---------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ def extract_final_answer(text: str) -> str:
     # 1. Check for \boxed{...}
     boxed_match = re.search(r"\\boxed\{(\d{1,3})\}", text)
     if boxed_match:
-        return boxed_match.group(1).zfill(3) # Pad with leading zeros if needed
+        return boxed_match.group(1).zfill(3)  # Pad with leading zeros if needed
 
     # 2. Check for "final answer is ..." patterns (case-insensitive)
     # Make sure pattern captures potential variations like "is: 123", "is 123."
@@ -57,7 +57,8 @@ def extract_final_answer(text: str) -> str:
         # Return the last found number, assuming it's the most likely answer candidate
         return fallback_matches[-1].zfill(3)
 
-    return "" # Return empty if no answer found
+    return ""  # Return empty if no answer found
+
 
 def grade_answer(llm_output: str, ground_truth_answer: str) -> bool:
     """Compares the extracted LLM answer to the ground truth."""
@@ -79,16 +80,18 @@ def run_evaluation() -> float:
     """Runs the evaluation on the dataset and returns the accuracy."""
     correct = 0
     start = time.time()
-    results = [] # Store results for potential later analysis if needed
+    results = []  # Store results for potential later analysis if needed
 
     with ThreadPoolExecutor(max_workers=NUM_WORKERS) as pool:
         # Submit all tasks, passing the MODEL_TO_USE
-        futures = {pool.submit(optimize.solve, row["Problem"], MODEL_TO_USE): row["Answer"] for row in DATA} # Pass MODEL_TO_USE here
+        futures = {
+            pool.submit(optimize.solve, row["Problem"], MODEL_TO_USE): row["Answer"] for row in DATA
+        }  # Pass MODEL_TO_USE here
 
         try:
             # Process completed tasks
             for idx, future in enumerate(as_completed(futures), 1):
-                problem_answer = futures[future] # Get the corresponding ground truth answer
+                problem_answer = futures[future]  # Get the corresponding ground truth answer
                 try:
                     # Wait up to TASK_TIMEOUT seconds for each LLM call
                     llm_raw_output = future.result(timeout=TASK_TIMEOUT)
@@ -98,13 +101,16 @@ def run_evaluation() -> float:
                     results.append({"raw_output": llm_raw_output, "correct_answer": problem_answer, "is_correct": is_correct})
 
                 except Exception as exc:
-                    print(f'[error] Generated an exception: {exc}')
+                    print(f"[error] Generated an exception: {exc}")
                     results.append({"raw_output": f"Error: {exc}", "correct_answer": problem_answer, "is_correct": False})
 
                 if idx % LOG_EVERY == 0 or idx == TOTAL_SAMPLES:
                     elapsed = time.time() - start
                     current_accuracy = correct / idx if idx > 0 else 0
-                    print(f"[progress] {idx}/{TOTAL_SAMPLES} completed, accuracy: {current_accuracy:.4f}, elapsed {elapsed:.1f} s", flush=True)
+                    print(
+                        f"[progress] {idx}/{TOTAL_SAMPLES} completed, accuracy: {current_accuracy:.4f}, elapsed {elapsed:.1f} s",
+                        flush=True,
+                    )
         except concurrent.futures.TimeoutError:
             # Abort any stuck LLM calls
             print(f"[error] LLM call timed out after {TASK_TIMEOUT}s", flush=True)
