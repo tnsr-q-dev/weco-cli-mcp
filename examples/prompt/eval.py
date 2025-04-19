@@ -22,7 +22,7 @@ import optimize  # the file Weco mutates
 TOTAL_SAMPLES = 30  # how many problems to load
 NUM_WORKERS = 30  # concurrent LLM calls
 LOG_EVERY = 5  # print progress after this many
-MODEL_TO_USE = "gpt-4.1-mini" # Define the model to use HERE
+MODEL_TO_USE = "gpt-4.1" # Define the model to use HERE
 TASK_TIMEOUT = 300  # seconds per LLM call
 # ---------------------------------------------------------------------
 

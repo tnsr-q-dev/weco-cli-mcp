@@ -74,15 +74,16 @@ def main() -> None:
                 "debug_prob": 0.5,
                 "max_debug_depth": max(1, math.ceil(0.1 * steps)),  # 10% of steps
             }
+            # Read API keys
+            api_keys = read_api_keys_from_env()
+            # API request timeout
+            timeout = 800
+
             # Read additional instructions
             additional_instructions = read_additional_instructions(additional_instructions=args.additional_instructions)
             # Read source code
             source_fp = pathlib.Path(args.source)
             source_code = read_from_path(fp=source_fp, is_json=False)
-            # Read API keys
-            api_keys = read_api_keys_from_env()
-            # API request timeout
-            timeout = 800
 
         # Initialize panels
         summary_panel = SummaryPanel(
@@ -193,12 +194,14 @@ def main() -> None:
             )
 
             for step in range(1, steps):
+                # Re-read instructions from the original source (file path or string) BEFORE each suggest call
+                current_additional_instructions = read_additional_instructions(additional_instructions=args.additional_instructions)
                 # Evaluate the current output and get the next solution
                 eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
                     console=console,
                     session_id=session_id,
                     execution_output=term_out,
-                    additional_instructions=additional_instructions,
+                    additional_instructions=current_additional_instructions,
                     api_keys=api_keys,
                     timeout=timeout,
                 )
@@ -286,12 +289,14 @@ def main() -> None:
                     transition_delay=0.1,  # Slightly longer delay for evaluation results
                 )
 
+            # Re-read instructions before the final feedback step
+            current_additional_instructions = read_additional_instructions(additional_instructions=args.additional_instructions)
             # Ensure we pass evaluation results for the last step's generated solution
             eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
                 console=console,
                 session_id=session_id,
                 execution_output=term_out,
-                additional_instructions=additional_instructions,
+                additional_instructions=current_additional_instructions,
                 api_keys=api_keys,
                 timeout=timeout,
             )

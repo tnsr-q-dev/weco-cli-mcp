@@ -22,7 +22,6 @@ Problem:
 Solution:
 """
 
-# Modify the function signature to accept model_name
 def solve(problem: str, model_name: str) -> str:
     """Return the model's raw text answer for one problem using the specified model."""
     prompt = PROMPT_TEMPLATE.format(problem=problem)

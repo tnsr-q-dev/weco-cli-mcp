@@ -2,7 +2,7 @@
 
 ## 1. Goal
 
-Your objective is to modify the `PROMPT_TEMPLATE` string within the `optimize.py` file to improve the `accuracy` metric when solving AIME math problems. The modifications should leverage the capabilities of the target model, **GPT-4.1**.
+Your objective is to modify the the `optimize.py` file to improve the `accuracy` metric when solving AIME math problems. The modifications should leverage the capabilities of the target model, **GPT-4.1**.
 
 ## 2. Files and Workflow
 
@@ -25,20 +25,20 @@ You are optimizing the prompt for `gpt-4.1`. Based on its characteristics, consi
 
 ## 4. Optimization Strategies (Focus on `PROMPT_TEMPLATE` in `optimize.py`)
 
-The primary goal is to enhance the model's reasoning process for these challenging math problems. Focus on **complex Chain-of-Thought (CoT)** designs within the `PROMPT_TEMPLATE`.
+The primary goal is to enhance the model's reasoning process for these challenging math problems. Focus on Chain-of-Thought (CoT) designs within the `PROMPT_TEMPLATE`.
 
 **Ideas to Explore:**
 You don't have to implement all of them, but the following ideas might be helpful:
-*   **Workflow Patterns:**
-    *  **Linear**: step-by-step thinking process could be a good starting point E.g., "1. Understand the problem constraints. 2. Identify relevant theorems/formulas. 3. Formulate a plan. 4. Execute calculations step-by-step. 5. Verify intermediate results. 6. State the final answer in the required format."
+*   **Workflow Patterns** try to use some of the following patterns:
+    *  **Linear**: Linear workflow, standarded CoT E.g. considering the following thinking steps (you don't have to include all of them), "1. Understand the problem constraints. 2. Identify relevant theorems/formulas. 3. Formulate a plan. 4. Execute calculations step-by-step. 5. Verify intermediate results. 6. State the final answer in the required format."
     *  **List Candidates**: You can ask the model to propose a few solutions in a particular step and pick the best solution. You can potentially also set the criterias in the prompt.
-    *  **Code** Write pesudo code to define even more complex workflows with loops, conditional statement, or go to statement.
+    *  **Code** Use pesudo code to define even more complex workflows with loops, conditional statement, or go to statement.
 *   **Other CoT Techniques:**
     *   Self-Correction/Reflection
     *   Plan Generation
     *   Debate, simulating multiple characters
     *   Tree of thought
-*   **Few-Shot Examples:** You *could* experiment with adding 1-2 high-quality AIME problem/solution examples directly into the `PROMPT_TEMPLATE` string (similar to how Weco attempted in one of the runs). Ensure the examples clearly show the desired reasoning style and the final `\boxed{XXX}` format. *Caution: This significantly increases prompt length and cost.*
+*   **Few-Shot Examples:** You *could* experiment with adding 1-2 high-quality AIME problem/solution examples directly into the `PROMPT_TEMPLATE` string (similar to how Weco attempted in one of the runs). Ensure the examples clearly show the desired reasoning style and the final `\boxed{XXX}` format.
 *   **Play with format:** The way you format the prompt. Markdown, xml, json, code or natural language. Similarly for the thinking tokens themselves you can also try out different formats.
 
 ## 5. Constraints
