@@ -99,14 +99,23 @@ def perform_login(console: Console):
                         json={"grant_type": "urn:ietf:params:oauth:grant-type:device_code", "device_code": device_code},
                     )
 
-                    # Check for standard OAuth2 errors first (often 400 Bad Request)
-                    if token_response.status_code == 400:
+                    # Check for 202 Accepted - Authorization Pending
+                    if token_response.status_code == 202:
+                        token_data = token_response.json()
+                        if token_data.get("error") == "authorization_pending":
+                             live_status.update("Waiting... (authorization pending)")
+                             continue # Continue polling
+                        else:
+                            # Unexpected 202 response format
+                            console.print(f"\n[bold red]Error:[/] Received unexpected 202 response: {token_data}")
+                            return False
+
+                    # Check for standard OAuth2 errors (often 400 Bad Request)
+                    elif token_response.status_code == 400:
                         token_data = token_response.json()
                         error_code = token_data.get("error", "unknown_error")
-                        if error_code == "authorization_pending":
-                            live_status.update("Waiting... (authorization pending)")
-                            continue  # Continue polling
-                        elif error_code == "slow_down":
+                        # NOTE: Removed "authorization_pending" check from here
+                        if error_code == "slow_down":
                             interval += 5  # Increase polling interval if instructed
                             live_status.update(f"Waiting... (slowing down polling to {interval}s)")
                             continue
@@ -121,13 +130,7 @@ def perform_login(console: Console):
                             console.print(f"\n[bold red]Error:[/] {error_desc} ({error_code})")
                             return False
 
-                    # Check specifically for 200 OK with "authorization_pending" error in JSON body
-                    # (as implemented in the backend for RFC compliance)
-                    elif token_response.status_code == 200 and token_response.json().get("error") == "authorization_pending":
-                        live_status.update("Waiting... (authorization pending)")
-                        continue
-
-                    # Check for other non-400/non-200 HTTP errors
+                    # Check for other non-200/non-202/non-400 HTTP errors
                     token_response.raise_for_status()
 
                     # If successful (200 OK and no 'error' field)
