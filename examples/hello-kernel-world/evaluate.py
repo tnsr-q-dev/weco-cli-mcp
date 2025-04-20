@@ -28,10 +28,10 @@ class Model(nn.Module):
         Returns:
             torch.Tensor: Output tensor of shape (batch_size, hidden_size).
         """
-        x = torch.matmul(x, self.weight.T)  # Gemm
-        x = x / 2  # Divide
-        x = torch.sum(x, dim=1, keepdim=True)  # Sum
-        x = x * self.scaling_factor  # Scaling
+        x = torch.matmul(x, self.weight.T)
+        x = x / 2
+        x = torch.sum(x, dim=1, keepdim=True)
+        x = x * self.scaling_factor
         return x
 
 
@@ -60,15 +60,33 @@ def get_inputs(B, N, device):
     return torch.randn(B, N, device=device, dtype=torch.float32)
 
 
+@torch.no_grad()
 def bench(f, inputs, n_warmup, n_rep):
+    # Warm up
     for _ in range(n_warmup):
         f(inputs)  # noqa
 
+    # Benchmark
+    device_type = inputs.device.type
     t_avg = 0.0
     for _ in range(n_rep):
+        # Clear cache before timing
+        if device_type == "cuda":
+            torch.cuda.empty_cache()
+        elif device_type == "mps":
+            torch.mps.empty_cache()
+
+        # time forward pass
         start_time = time.time()
         f(inputs)
         t_avg += time.time() - start_time
+
+        # Synchronize after each iteration
+        if device_type == "cuda":
+            torch.cuda.synchronize()
+        elif device_type == "mps":
+            torch.mps.synchronize()
+
     t_avg /= n_rep * 1e-3
     return t_avg
 
@@ -81,14 +99,19 @@ if __name__ == "__main__":
     parser.add_argument("--device", default="cpu", type=str)
     args = parser.parse_args()
 
+    # benchmark parameters
+    n_correctness_trials = 10
+    n_warmup = 1000
+    n_rep = 5000
+
     # init and input parameters
-    B, N, H, S = 128, 10, 20, 1.5
+    batch_size, input_size, hidden_size, scaling_factor = 128, 10, 20, 1.5
 
     # load solution module
     try:
         torch.manual_seed(0)
         solution_module = load_module_from_path(args.solution_path, add_to_sys_modules=False)
-        solution_model = solution_module.Model(N, H, S).to(args.device)
+        solution_model = solution_module.Model(input_size, hidden_size, scaling_factor).to(args.device)
         assert isinstance(solution_model, nn.Module)
         assert hasattr(solution_model, "forward")
     except Exception:
@@ -96,13 +119,12 @@ if __name__ == "__main__":
         exit(1)
 
     torch.manual_seed(0)
-    baseline_model = Model(N, H, S).to(args.device)
+    baseline_model = Model(input_size, hidden_size, scaling_factor).to(args.device)
 
     # measure correctness
-    n_correctness_trials = 10
     max_diff_avg = 0
     for _ in range(n_correctness_trials):
-        inputs = get_inputs(B, N, args.device)
+        inputs = get_inputs(batch_size, input_size, args.device)
         baseline_output = baseline_model(inputs)
         optimized_output = solution_model(inputs)
         max_diff_avg += torch.max(torch.abs(optimized_output - baseline_output))
@@ -110,16 +132,9 @@ if __name__ == "__main__":
     print(f"max float diff between values of baseline and optimized model: {max_diff_avg}")
 
     # measure performance
-    inputs = get_inputs(B, N, args.device)
-    n_warmup = 100
-    n_rep = 500
-
-    # baseline
+    inputs = get_inputs(batch_size, input_size, args.device)
     t_avg_baseline = bench(baseline_model, inputs, n_warmup, n_rep)
     print(f"baseline time: {t_avg_baseline:.2f}ms")
-
-    # optimized
     t_avg_optimized = bench(solution_model, inputs, n_warmup, n_rep)
     print(f"optimized time: {t_avg_optimized:.2f}ms")
-
     print(f"speedup: {t_avg_baseline / t_avg_optimized:.2f}x")

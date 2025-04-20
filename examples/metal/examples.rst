@@ -3,7 +3,8 @@
 Custom Metal Kernels
 ====================
 
-MLX supports writing custom Metal kernels through the Python and C++ APIs.
+MLX supports writing custom Metal kernels through the Python and C++ APIs. Use Metal kernels allows us to optimize the performance of our models by writing low-level parallelization and vectorization schemes with fuse operations effciently.
+One important thing to keep in mind is correctness. The optimized code should produce outputs that are identical or atleast numerically close to the reference implementation i.e., max float difference less than 1e-5.
 
 When designing a custom kernel, ensure that you maintain the format of having a 'Model' class with a '__call__' method as this is what will be called to evaluate the solution.
 

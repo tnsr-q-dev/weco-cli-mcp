@@ -5,6 +5,7 @@ import importlib
 import traceback
 import mlx.core as mx
 import mlx.nn as nn
+from typing import Union
 
 
 ########################################################
@@ -12,26 +13,27 @@ import mlx.nn as nn
 ########################################################
 class Model(nn.Module):
     """
-    Model that performs a matrix multiplication, division, summation, and scaling.
+    Model that performs a 2D convolution.
+
+    Args:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+        kernel_size (Union[int, tuple]): Size of the convolution kernel.
+        stride (Union[int, tuple]): Stride of the convolution. Default is 1.
     """
 
-    def __init__(self, input_size, hidden_size, scaling_factor):
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: Union[int, tuple], stride: Union[int, tuple] = 1):
         super(Model, self).__init__()
-        self.weight = mx.random.normal(shape=(hidden_size, input_size))
-        self.scaling_factor = scaling_factor
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride)
 
     def __call__(self, x):
         """
         Args:
-            x (mx.array): Input tensor of shape (batch_size, input_size).
+            x (mx.array): Input tensor of shape (batch_size, height, width, in_channels).
         Returns:
-            mx.array: Output tensor of shape (batch_size, hidden_size).
+            mx.array: Output tensor of shape (batch_size, height, width, out_channels).
         """
-        x = mx.matmul(x, mx.transpose(self.weight))  # Gemm
-        x = x / 2  # Divide
-        x = mx.sum(x, axis=1, keepdims=True)  # Sum
-        x = x * self.scaling_factor  # Scaling
-        return x
+        return self.conv(x)
 
 
 ########################################################
@@ -52,9 +54,9 @@ def load_module_from_path(module_path: str, add_to_sys_modules: bool = False):
 ########################################################
 # Benchmark
 ########################################################
-def get_inputs(B, N):
+def get_inputs(batch_size, img_height, img_width, img_channels):
     # MLX doesn't use device parameter like PyTorch, as it automatically uses Metal
-    return mx.random.normal(shape=(B, N), dtype=mx.float32)
+    return mx.random.normal(shape=(batch_size, img_height, img_width, img_channels), dtype=mx.float32)
 
 
 def bench(f, inputs, n_warmup, n_rep):
@@ -86,7 +88,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # init and input parameters
-    B, N, H, S = 128, 10, 20, 1.5
+    batch_size = 4
+    img_height = 224
+    img_width = 224
+    img_channels = 3
+    out_channels = 64
+    kernel_size = 3
+    stride = 1
 
     # Set the default device to 0
     mx.set_default_device(mx.gpu)
@@ -95,20 +103,20 @@ if __name__ == "__main__":
     try:
         mx.random.seed(0)
         solution_module = load_module_from_path(args.solution_path, add_to_sys_modules=False)
-        solution_model = solution_module.Model(N, H, S)
+        solution_model = solution_module.Model(img_channels, out_channels, kernel_size, stride)
         assert hasattr(solution_model, "__call__")
     except Exception:
         print(f"Candidate module initialization failed: {traceback.format_exc()}")
         exit(1)
 
     mx.random.seed(0)
-    baseline_model = Model(N, H, S)
+    baseline_model = Model(img_channels, out_channels, kernel_size, stride)
 
     # measure correctness
     n_correctness_trials = 10
     max_diff_avg = 0
     for _ in range(n_correctness_trials):
-        inputs = get_inputs(B, N)
+        inputs = get_inputs(batch_size, img_height, img_width, img_channels)
         baseline_output = baseline_model(inputs)
         optimized_output = solution_model(inputs)
         max_diff = mx.max(mx.abs(optimized_output - baseline_output))
@@ -118,9 +126,9 @@ if __name__ == "__main__":
     print(f"max float diff between values of baseline and optimized model: {max_diff_avg}")
 
     # measure performance
-    inputs = get_inputs(B, N)
-    n_warmup = 100
-    n_rep = 500
+    inputs = get_inputs(batch_size, img_height, img_width, img_channels)
+    n_warmup = 1000
+    n_rep = 5000
 
     # baseline
     t_avg_baseline = bench(baseline_model, inputs, n_warmup, n_rep)

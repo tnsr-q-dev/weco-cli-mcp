@@ -6,13 +6,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "weco"
 authors = [
-    {name = "Weco AI Team", email = "dhruv@weco.ai"},
+    {name = "Weco AI Team", email = "contact@weco.ai"},
 ]
 description = "Documentation for `weco`, a CLI for using Weco AI's code optimizer."
 readme = "README.md"
-version = "0.2.5"
+version = "0.2.8"
 license = {text = "MIT"}
-requires-python = ">=3.12"
+requires-python = ">=3.8"
 dependencies = ["requests", "rich"]
 keywords = ["AI", "Code Optimization", "Code Generation"]
 classifiers = [

@@ -6,18 +6,22 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from typing import Dict, List, Optional, Union, Tuple
 from .utils import format_number
+import pathlib
 
 
 class SummaryPanel:
     """Holds a summary of the optimization session."""
 
-    def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, session_id: str = None):
-        self.goal = ("Maximizing" if maximize else "Minimizing") + f" {metric_name}..."
+    def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, runs_dir: str, session_id: str = None):
+        self.maximize = maximize
+        self.metric_name = metric_name
+        self.goal = ("Maximizing" if self.maximize else "Minimizing") + f" {self.metric_name}..."
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         self.total_steps = total_steps
         self.model = model
-        self.session_id = session_id or "N/A"
+        self.runs_dir = runs_dir
+        self.session_id = session_id if session_id is not None else "N/A"
         self.progress = Progress(
             TextColumn("[progress.description]{task.description}"),
             BarColumn(bar_width=20),
@@ -39,24 +43,29 @@ class SummaryPanel:
         self.total_input_tokens += usage["input_tokens"]
         self.total_output_tokens += usage["output_tokens"]
 
-    def get_display(self) -> Panel:
+    def get_display(self, final_message: Optional[str] = None) -> Panel:
         """Create a summary panel with the relevant information."""
         layout = Layout(name="summary")
         summary_table = Table(show_header=False, box=None, padding=(0, 1))
-        # Goal
-        summary_table.add_row(f"[bold cyan]Goal:[/] {self.goal}")
+
         summary_table.add_row("")
-        # Log directory
-        runs_dir = f".runs/{self.session_id}"
-        summary_table.add_row(f"[bold cyan]Logs:[/] [blue underline]{runs_dir}[/]")
+        # Goal
+        if final_message is not None:
+            summary_table.add_row(f"[bold cyan]Result:[/] {final_message}")
+        else:
+            summary_table.add_row(f"[bold cyan]Goal:[/] {self.goal}")
         summary_table.add_row("")
         # Model used
-        summary_table.add_row(f"[bold cyan]Model:[/] [yellow]{self.model}[/]")
+        summary_table.add_row(f"[bold cyan]Model:[/] {self.model}")
+        summary_table.add_row("")
+        # Log directory
+        summary_table.add_row(f"[bold cyan]Logs:[/] [blue underline]{self.runs_dir}/{self.session_id}[/]")
         summary_table.add_row("")
         # Token counts
         summary_table.add_row(
             f"[bold cyan]Tokens:[/] ↑[yellow]{format_number(self.total_input_tokens)}[/] ↓[yellow]{format_number(self.total_output_tokens)}[/] = [green]{format_number(self.total_input_tokens + self.total_output_tokens)}[/]"
         )
+        summary_table.add_row("")
         # Progress bar
         summary_table.add_row(self.progress)
 
@@ -250,13 +259,19 @@ class EvaluationOutputPanel:
 class SolutionPanels:
     """Displays the current and best solutions side by side."""
 
-    def __init__(self, metric_name: str):
+    def __init__(self, metric_name: str, source_fp: pathlib.Path):
         # Current solution
         self.current_node = None
         # Best solution
         self.best_node = None
         # Metric name
         self.metric_name = metric_name.capitalize()
+        # Determine the lexer for the source file
+        self.lexer = self._determine_lexer(source_fp)
+
+    def _determine_lexer(self, source_fp: pathlib.Path) -> str:
+        """Determine the lexer for the source file."""
+        return Syntax.from_path(source_fp).lexer
 
     def update(self, current_node: Union[Node, None], best_node: Union[Node, None]):
         """Update the current and best solutions."""
@@ -274,7 +289,7 @@ class SolutionPanels:
         # Current solution (without score)
         current_title = f"[bold]💡 Current Solution (Step {current_step})"
         current_panel = Panel(
-            Syntax(str(current_code), "python", theme="monokai", line_numbers=True, word_wrap=False),
+            Syntax(str(current_code), self.lexer, theme="monokai", line_numbers=True, word_wrap=False),
             title=current_title,
             border_style="yellow",
             expand=True,
@@ -284,7 +299,7 @@ class SolutionPanels:
         # Best solution
         best_title = f"[bold]🏆 Best Solution ([green]{self.metric_name}: {f'{best_score:.4f}' if best_score is not None else 'N/A'}[/])"
         best_panel = Panel(
-            Syntax(str(best_code), "python", theme="monokai", line_numbers=True, word_wrap=False),
+            Syntax(str(best_code), self.lexer, theme="monokai", line_numbers=True, word_wrap=False),
             title=best_title,
             border_style="green",
             expand=True,

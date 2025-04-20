@@ -103,8 +103,8 @@ def perform_login(console: Console):
                     if token_response.status_code == 202:
                         token_data = token_response.json()
                         if token_data.get("error") == "authorization_pending":
-                             live_status.update("Waiting... (authorization pending)")
-                             continue # Continue polling
+                            live_status.update("Waiting... (authorization pending)")
+                            continue  # Continue polling
                         else:
                             # Unexpected 202 response format
                             console.print(f"\n[bold red]Error:[/] Received unexpected 202 response: {token_data}")
@@ -177,7 +177,7 @@ def main() -> None:
         "run", help="Run code optimization", formatter_class=argparse.RawDescriptionHelpFormatter
     )
     # Add arguments specific to the 'run' command to the run_parser
-    run_parser.add_argument("--source", type=str, required=True, help="Path to the Python source code (e.g. optimize.py)")
+    run_parser.add_argument("--source", type=str, required=True, help="Path to the source code file (e.g. optimize.py)")
     run_parser.add_argument(
         "--eval-command", type=str, required=True, help="Command to run for evaluation (e.g. 'python eval.py --arg1=val1')"
     )
@@ -191,14 +191,20 @@ def main() -> None:
     )
     run_parser.add_argument("--steps", type=int, required=True, help="Number of steps to run")
     run_parser.add_argument("--model", type=str, required=True, help="Model to use for optimization")
+    run_parser.add_argument("--log-dir", type=str, default=".runs", help="Directory to store logs and results")
     run_parser.add_argument(
         "--additional-instructions",
         default=None,
         type=str,
         help="Description of additional instruction or path to a file containing additional instructions",
     )
+    run_parser.add_argument(
+        "--preserve-source",
+        action="store_true",
+        help="If set, do not overwrite the original source file; only save modified versions in the runs directory",
+    )
 
-    # ADD THE LOGOUT PARSER DEFINITION HERE
+    # --- Logout Command ---
     logout_parser = subparsers.add_parser("logout", help="Log out from Weco and clear saved API key.")  # noqa F841
 
     args = parser.parse_args()
@@ -206,6 +212,7 @@ def main() -> None:
     # --- Handle Logout Command ---
     if args.command == "logout":
         clear_api_key()
+        console.print("[green]Logged out successfully.[/]")  # Added feedback
         sys.exit(0)
 
     # --- Handle Run Command ---
@@ -215,33 +222,30 @@ def main() -> None:
         llm_api_keys = read_api_keys_from_env()  # Read keys from client environment
 
         if not weco_api_key:
-            # console.print("You are not logged in.") # Removing redundant message
             login_choice = Prompt.ask(
-                # Updated prompt text and choices
                 "Log in to Weco to save run history or use anonymously? ([bold]L[/]ogin / [bold]S[/]kip)",
-                choices=["l", "s"],  # Only 'l' or 's' are valid inputs now
-                default="s",  # Default to skip/anonymous
+                choices=["l", "s"],
+                default="s",
             ).lower()
 
-            if login_choice == "l":  # User chose to log in
+            if login_choice == "l":
                 console.print("[cyan]Starting login process...[/]")
                 if not perform_login(console):
                     console.print("[bold red]Login process failed or was cancelled.[/]")
-                    sys.exit(1)  # Exit if login failed
-                weco_api_key = load_api_key()  # Reload key after successful login
-                if not weco_api_key:  # Check if key was actually saved
+                    sys.exit(1)
+                weco_api_key = load_api_key()
+                if not weco_api_key:
                     console.print("[bold red]Error: Login completed but failed to retrieve API key.[/]")
                     sys.exit(1)
                 console.print("[green]Login successful. Proceeding with authenticated run.[/]")
 
-            elif login_choice == "s":  # User chose to skip
+            elif login_choice == "s":
                 console.print("[yellow]Proceeding anonymously. LLM API keys must be provided via environment variables.[/]")
                 if not llm_api_keys:
                     console.print(
                         "[bold red]Error:[/] No LLM API keys found in environment (e.g., OPENAI_API_KEY). Cannot proceed anonymously."
                     )
                     sys.exit(1)
-            # No else needed as choices are restricted
 
         # --- Prepare API Call Arguments ---
         auth_headers = {}
@@ -250,7 +254,7 @@ def main() -> None:
 
         if weco_api_key:
             auth_headers["Authorization"] = f"Bearer {weco_api_key}"
-            # Don't clear metadata_keys here, backend will decide based on auth status
+            # Backend will decide whether to use client keys based on auth status
 
         # --- Main Run Logic ---
         try:
@@ -266,15 +270,21 @@ def main() -> None:
                 "debug_prob": 0.5,
                 "max_debug_depth": max(1, math.ceil(0.1 * steps)),
             }
+            # Read additional instructions
             additional_instructions = read_additional_instructions(additional_instructions=args.additional_instructions)
+            # Read source code path
             source_fp = pathlib.Path(args.source)
+            # Read source code content
             source_code = read_from_path(fp=source_fp, is_json=False)
+            # API request timeout
             timeout = 800
 
             # --- Panel Initialization ---
-            summary_panel = SummaryPanel(maximize=maximize, metric_name=metric_name, total_steps=steps, model=args.model)
+            summary_panel = SummaryPanel(
+                maximize=maximize, metric_name=metric_name, total_steps=steps, model=args.model, runs_dir=args.log_dir
+            )
             plan_panel = PlanPanel()
-            solution_panels = SolutionPanels(metric_name=metric_name)
+            solution_panels = SolutionPanels(metric_name=metric_name, source_fp=source_fp)
             eval_output_panel = EvaluationOutputPanel()
             tree_panel = MetricTreePanel(maximize=maximize)
             layout = create_optimization_layout()
@@ -301,15 +311,21 @@ def main() -> None:
             # --- Live Update Loop ---
             refresh_rate = 4
             with Live(layout, refresh_per_second=refresh_rate, screen=True) as live:
+                # Define the runs directory (.runs/<session-id>)
                 session_id = session_response["session_id"]
-                runs_dir = pathlib.Path(".runs") / session_id
+                runs_dir = pathlib.Path(args.log_dir) / session_id
                 runs_dir.mkdir(parents=True, exist_ok=True)
 
-                runs_copy_source_fp = runs_dir / "original.py"
+                # Save the original code (.runs/<session-id>/original.<extension>)
+                runs_copy_source_fp = runs_dir / f"original{source_fp.suffix}"  # Use correct suffix
                 write_to_path(fp=runs_copy_source_fp, content=source_code)
-                write_to_path(fp=source_fp, content=session_response["code"])
 
-                summary_panel.session_id = session_id
+                # Write the initial code string to the source file path (if not preserving)
+                if not args.preserve_source:
+                    write_to_path(fp=source_fp, content=session_response["code"])
+
+                # Update the panels with the initial solution
+                summary_panel.session_id = session_id  # Add session id now that we have it
                 summary_panel.set_step(step=0)
                 summary_panel.update_token_counts(usage=session_response["usage"])
                 plan_panel.update(plan=session_response["plan"])
@@ -352,44 +368,45 @@ def main() -> None:
                     transition_delay=0.1,
                 )
 
-                term_out = run_evaluation(eval_command=args.eval_command)
-                eval_output_panel.update(output=term_out)
-                smooth_update(
-                    live=live,
-                    layout=layout,
-                    sections_to_update=[("eval_output", eval_output_panel.get_display())],
-                    transition_delay=0.1,
-                )
+                term_out = ""  # Initialize term_out for the first feedback loop
+                best_solution_node = None  # Initialize best node
 
-                best_solution_node = None
                 for step in range(steps):
-                    if step > 0:
-                        term_out = run_evaluation(eval_command=args.eval_command)
-                        eval_output_panel.update(output=term_out)
-                        smooth_update(live, layout, [("eval_output", eval_output_panel.get_display())])
+                    # Run evaluation for the previous step's solution (or initial)
+                    term_out = run_evaluation(eval_command=args.eval_command)
+                    eval_output_panel.update(output=term_out)
+                    smooth_update(live, layout, [("eval_output", eval_output_panel.get_display())])
 
-                    is_last_evaluation = step == steps - 1
+                    # Re-read instructions from the original source (file path or string) BEFORE each suggest call
+                    current_additional_instructions = read_additional_instructions(
+                        additional_instructions=args.additional_instructions
+                    )
 
+                    # Send feedback and get next suggestion
                     eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
                         console=console,
                         session_id=session_id,
                         execution_output=term_out,
-                        additional_instructions=additional_instructions,
+                        additional_instructions=current_additional_instructions,  # Pass current instructions
                         api_keys=metadata_keys,  # Pass client LLM keys
                         auth_headers=auth_headers,  # Pass Weco key if logged in
                         timeout=timeout,
                     )
 
+                    # Update token counts for the suggest call
                     summary_panel.update_token_counts(usage=eval_and_next_solution_response["usage"])
+
+                    # Get latest status including history and best result
                     status_response = get_optimization_session_status(
                         console=console,
                         session_id=session_id,
                         include_history=True,
-                        auth_headers=auth_headers,
+                        auth_headers=auth_headers,  # Pass auth headers
                         timeout=timeout,
                     )
                     tree_panel.build_metric_tree(nodes=status_response["history"])
 
+                    # Update best solution node based on status
                     if status_response["best_result"] is not None:
                         best_solution_node = Node(
                             id=status_response["best_result"]["solution_id"],
@@ -398,11 +415,15 @@ def main() -> None:
                             metric=status_response["best_result"]["metric_value"],
                             is_buggy=status_response["best_result"]["is_buggy"],
                         )
+                    # else: best_solution_node remains None or its previous value
 
-                    if is_last_evaluation or eval_and_next_solution_response.get("is_done", False):
-                        summary_panel.set_step(step=steps)
+                    # Check if optimization is done (last step or API indicates completion)
+                    is_last_step = step == steps - 1
+                    if is_last_step or eval_and_next_solution_response.get("is_done", False):
+                        summary_panel.set_step(step=steps)  # Mark as complete
+                        # Update panels for final state
                         solution_panels.update(current_node=None, best_node=best_solution_node)
-                        _, best_solution_panel = solution_panels.get_display(current_step=steps)
+                        _, best_solution_panel = solution_panels.get_display(current_step=steps)  # Get final best panel
                         smooth_update(
                             live=live,
                             layout=layout,
@@ -410,41 +431,54 @@ def main() -> None:
                                 ("summary", summary_panel.get_display()),
                                 ("tree", tree_panel.get_display()),
                                 ("best_solution", best_solution_panel),
-                                ("current_solution", Panel("Optimization Complete", title="Current Solution")),
-                                ("plan", Panel("Optimization Complete", title="Plan")),
+                                (
+                                    "current_solution",
+                                    Panel("[italic]Finished[/]", title="Current Solution", border_style="dim"),
+                                ),  # Indicate finished
+                                (
+                                    "plan",
+                                    Panel("[italic]Finished[/]", title="📝 Thinking...", border_style="dim"),
+                                ),  # Indicate finished
                             ],
                             transition_delay=0.1,
                         )
-                        break
+                        break  # Exit loop
 
-                    # Prepare for next iteration
+                    # --- Prepare for next iteration ---
                     next_solution_code = eval_and_next_solution_response["code"]
-                    write_to_path(fp=runs_dir / f"step_{step + 1}.py", content=next_solution_code)
-                    write_to_path(fp=source_fp, content=next_solution_code)
+                    # Save next solution (.runs/<session-id>/step_<step>.<extension>)
+                    write_to_path(fp=runs_dir / f"step_{step + 1}{source_fp.suffix}", content=next_solution_code)
+                    # Write the next solution to the source file (if not preserving)
+                    if not args.preserve_source:
+                        write_to_path(fp=source_fp, content=next_solution_code)
 
+                    # Update panels for the next step
                     summary_panel.set_step(step=step + 1)
                     plan_panel.update(plan=eval_and_next_solution_response["plan"])
+                    # Mark the new node as unevaluated in the tree
                     tree_panel.set_unevaluated_node(node_id=eval_and_next_solution_response["solution_id"])
 
+                    # Find the current node details from the history to display its code
                     current_solution_node = None
-                    for node_data in status_response["history"]:
+                    for node_data in status_response["history"]:  # Search in the updated history
                         if node_data["solution_id"] == eval_and_next_solution_response["solution_id"]:
                             current_solution_node = Node(
                                 id=node_data["solution_id"],
                                 parent_id=node_data["parent_id"],
-                                code=node_data["code"],
+                                code=node_data["code"],  # Use code from history
                                 metric=node_data["metric_value"],
                                 is_buggy=node_data["is_buggy"],
                             )
                             break
+                    # Fallback if node somehow not in history yet (shouldn't happen ideally)
                     if current_solution_node is None:
-                        print(
-                            f"Warning: Could not find newly generated solution {eval_and_next_solution_response['solution_id']} in history."
+                        console.print(
+                            f"[yellow]Warning:[/] Could not find solution {eval_and_next_solution_response['solution_id']} in history immediately. Using code from API response."
                         )
                         current_solution_node = Node(
                             id=eval_and_next_solution_response["solution_id"],
-                            code=next_solution_code,
-                            parent_id=None,
+                            code=next_solution_code,  # Use code from suggest response
+                            parent_id=None,  # Parent might not be known here
                             metric=None,
                             is_buggy=False,
                         )
@@ -452,7 +486,8 @@ def main() -> None:
                     solution_panels.update(current_node=current_solution_node, best_node=best_solution_node)
                     current_solution_panel, best_solution_panel = solution_panels.get_display(current_step=step + 1)
 
-                    eval_output_panel.clear()
+                    eval_output_panel.clear()  # Clear eval output for next run
+
                     smooth_update(
                         live=live,
                         layout=layout,
@@ -466,43 +501,65 @@ def main() -> None:
                         ],
                         transition_delay=0.08,
                     )
-                    # term_out for next iteration is prepared by run_evaluation at start of loop
+                    # term_out for the *next* iteration will be prepared by run_evaluation at the start of the next loop
 
-                # --- Post-Loop Processing ---
-                if best_solution_node:
-                    solution_panels.update(current_node=None, best_node=best_solution_node)
-                    _, best_solution_panel = solution_panels.get_display(current_step=steps)
-                else:
-                    best_solution_panel = Panel(
-                        "[italic]No improvement found.[/]", title=f"Best Solution ({metric_name})", border_style="dim"
+                # --- Post-Loop Processing (after loop finishes or breaks) ---
+                # Get final status one last time if loop finished normally
+                # This ensures the tree reflects the evaluation of the last generated solution
+                if not eval_and_next_solution_response.get("is_done", False) and step == steps - 1:
+                    status_response = get_optimization_session_status(
+                        console=console,
+                        session_id=session_id,
+                        include_history=True,
+                        auth_headers=auth_headers,
+                        timeout=timeout,
                     )
+                    tree_panel.build_metric_tree(nodes=status_response["history"])
+                    if status_response["best_result"] is not None:
+                        best_solution_node = Node(
+                            id=status_response["best_result"]["solution_id"],
+                            parent_id=status_response["best_result"]["parent_id"],
+                            code=status_response["best_result"]["code"],
+                            metric=status_response["best_result"]["metric_value"],
+                            is_buggy=status_response["best_result"]["is_buggy"],
+                        )
 
-                end_optimization_layout["summary"].update(summary_panel.get_display())
-                end_optimization_layout["tree"].update(tree_panel.get_display())
-                end_optimization_layout["best_solution"].update(best_solution_panel)
+                # Determine final best solution panel display
+                solution_panels.update(current_node=None, best_node=best_solution_node)  # Update with final best
+                _, best_solution_panel = solution_panels.get_display(current_step=steps)  # Get final best panel display
 
-                best_solution_code = best_solution_node.code if best_solution_node else None
-                best_solution_score = best_solution_node.metric if best_solution_node else None
+                # Prepare final message for summary
+                final_message = "[red] No solution found.[/]"
+                best_solution_code = None
+                if best_solution_node and best_solution_node.metric is not None:
+                    final_message = f"{summary_panel.metric_name.capitalize()} {'maximized' if summary_panel.maximize else 'minimized'}! Best {summary_panel.metric_name.lower()} = [green]{best_solution_node.metric:.4f}[/] 🏆"
+                    best_solution_code = best_solution_node.code
 
-                if best_solution_code is None or best_solution_score is None:
+                # Update the end optimization layout
+                end_optimization_layout["summary"].update(summary_panel.get_display(final_message=final_message))
+                end_optimization_layout["tree"].update(tree_panel.get_display())  # Display final tree
+                end_optimization_layout["best_solution"].update(best_solution_panel)  # Display final best solution
+
+                # Prepare content for best solution file
+                if best_solution_code:
+                    best_score_str = format_number(best_solution_node.metric)
                     best_solution_content = (
-                        f"# Weco could not find a better solution\n\n{read_from_path(fp=runs_copy_source_fp, is_json=False)}"
+                        f"# Best solution from Weco with score {best_score_str} ({metric_name})\n\n{best_solution_code}"
                     )
                 else:
-                    best_score_str = (
-                        format_number(best_solution_score)
-                        if best_solution_score is not None and isinstance(best_solution_score, (int, float))
-                        else "N/A"
-                    )
-                    best_solution_content = (
-                        f"# Best solution from Weco with a score of {best_score_str}\n\n{best_solution_code}"
-                    )
+                    # Read original code back if no improvement was found
+                    original_code_content = read_from_path(fp=runs_copy_source_fp, is_json=False)
+                    best_solution_content = f"# Weco could not find a better solution\n\n{original_code_content}"
 
-                write_to_path(fp=runs_dir / "best.py", content=best_solution_content)
-                write_to_path(fp=source_fp, content=best_solution_content)
+                # Save best solution to .runs/<session-id>/best.<extension>
+                write_to_path(fp=runs_dir / f"best{source_fp.suffix}", content=best_solution_content)
 
-            console.print(end_optimization_layout)
-            # --- End of the main execution block within try ---
+                # Write the best solution to the source file (if not preserving)
+                if not args.preserve_source:
+                    write_to_path(fp=source_fp, content=best_solution_content)
+
+            # --- End of Live context ---
+            console.print(end_optimization_layout)  # Print the final layout outside Live context
 
         except Exception as e:
             console.print(Panel(f"[bold red]Error: {str(e)}", title="[bold red]Error", border_style="red"))
@@ -510,7 +567,10 @@ def main() -> None:
             console.print_exception(show_locals=True)
             sys.exit(1)
 
-    # Removed the final 'else' block as commands are now required by subparsers
+    # # No final else needed as command is required by subparsers
     # else:
     #      parser.print_help()
     #      sys.exit(1)
+
+
+# Ensure there's a newline at the end of the file if needed by convention/linters
