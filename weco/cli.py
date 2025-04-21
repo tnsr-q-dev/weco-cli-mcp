@@ -125,7 +125,7 @@ def main() -> None:
             runs_dir.mkdir(parents=True, exist_ok=True)
 
             # Save the original code (.runs/<session-id>/original.<extension>)
-            runs_copy_source_fp = runs_dir / f"original.{source_fp.suffix}"
+            runs_copy_source_fp = runs_dir / f"original{source_fp.suffix}"
             write_to_path(fp=runs_copy_source_fp, content=source_code)
 
             # Write the code string to the source file path
@@ -368,7 +368,7 @@ def main() -> None:
                 best_solution_content = f"# Best solution from Weco with a score of {best_score_str}\n\n{best_solution_code}"
 
             # Save best solution to .runs/<session-id>/best.<extension>
-            write_to_path(fp=runs_dir / f"best.{source_fp.suffix}", content=best_solution_content)
+            write_to_path(fp=runs_dir / f"best{source_fp.suffix}", content=best_solution_content)
 
             # write the best solution to the source file
             if not args.preserve_source:

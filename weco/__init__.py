@@ -1,4 +1,4 @@
 # DO NOT EDIT
-__pkg_version__ = "0.2.9"
+__pkg_version__ = "0.2.10"
 __api_version__ = "v1"
 __base_url__ = f"https://api.aide.weco.ai/{__api_version__}"

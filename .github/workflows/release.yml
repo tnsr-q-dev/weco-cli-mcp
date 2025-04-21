@@ -90,7 +90,7 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       run: >-
         gh release create
-        'v0.2.9'
+        'v0.2.10'
         --repo '${{ github.repository }}'
         --notes ""
 
@@ -102,5 +102,5 @@ jobs:
       # sigstore-produced signatures and certificates.
       run: >-
         gh release upload
-        'v0.2.9' dist/**
+        'v0.2.10' dist/**
         --repo '${{ github.repository }}'
