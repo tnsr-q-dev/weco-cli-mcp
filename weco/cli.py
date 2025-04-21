@@ -201,7 +201,7 @@ def main() -> None:
                     timeout=timeout,
                 )
                 # Save next solution (.runs/<session-id>/step_<step>.<extension>)
-                write_to_path(fp=runs_dir / f"step_{step}.{source_fp.suffix}", content=eval_and_next_solution_response["code"])
+                write_to_path(fp=runs_dir / f"step_{step}{source_fp.suffix}", content=eval_and_next_solution_response["code"])
 
                 # Write the next solution to the source file
                 write_to_path(fp=source_fp, content=eval_and_next_solution_response["code"])
