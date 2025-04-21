@@ -342,8 +342,8 @@ def main() -> None:
             # Update the end optimization layout
             final_message = (
                 f"{summary_panel.metric_name.capitalize()} {'maximized' if summary_panel.maximize else 'minimized'}! Best solution {summary_panel.metric_name.lower()} = [green]{status_response['best_result']['metric_value']}[/] 🏆"
-                if best_solution_node is not None
-                else "[red] No solution found.[/]"
+                if best_solution_node is not None and best_solution_node.metric is not None
+                else "[red] No valid solution found.[/]"
             )
             end_optimization_layout["summary"].update(summary_panel.get_display(final_message=final_message))
             end_optimization_layout["tree"].update(tree_panel.get_display())
@@ -352,8 +352,13 @@ def main() -> None:
             # Save optimization results
             # If the best solution does not exist or is has not been measured at the end of the optimization
             # save the original solution as the best solution
-            best_solution_code = best_solution_node.code
-            best_solution_score = best_solution_node.metric
+            if best_solution_node is not None:
+                best_solution_code = best_solution_node.code
+                best_solution_score = best_solution_node.metric
+            else:
+                best_solution_code = None
+                best_solution_score = None
+
             if best_solution_code is None or best_solution_score is None:
                 best_solution_content = (
                     f"# Weco could not find a better solution\n\n{read_from_path(fp=runs_copy_source_fp, is_json=False)}"
