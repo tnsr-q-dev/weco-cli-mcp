@@ -410,7 +410,11 @@ def main() -> None:
                     # Get the optimization session status for
                     # the best solution, its score, and the history to plot the tree
                     status_response = get_optimization_session_status(
-                        console=console, session_id=session_id, include_history=True, timeout=timeout, auth_headers=auth_headers
+                        console=console,
+                        session_id=session_id,
+                        include_history=True,
+                        timeout=timeout,
+                        auth_headers=auth_headers,
                     )
 
                     # Update the step of the progress bar
