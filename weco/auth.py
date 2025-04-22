@@ -33,7 +33,7 @@ def save_api_key(api_key: str):
         print(f"Warning: Could not set permissions on {CREDENTIALS_FILE}: {e}")
 
 
-def load_api_key() -> str | None:
+def load_weco_api_key() -> str | None:
     """Loads the Weco API key."""
     if not CREDENTIALS_FILE.exists():
         return None

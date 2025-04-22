@@ -70,7 +70,7 @@ def evaluate_feedback_then_suggest_next_solution(
             f"{__base_url__}/sessions/{session_id}/suggest",  # Path is relative to base_url
             json={
                 "execution_output": execution_output,
-                "additional_instructions": additional_instructions,  # Restore this field
+                "additional_instructions": additional_instructions,
                 "metadata": {**api_keys},
             },
             headers=auth_headers,  # Add headers
