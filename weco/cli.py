@@ -237,7 +237,6 @@ def main() -> None:
                 if not weco_api_key:
                     console.print("[bold red]Error: Login completed but failed to retrieve API key.[/]")
                     sys.exit(1)
-                console.print("[green]Login successful. Proceeding with authenticated run.[/]")
 
             elif login_choice == "s":
                 console.print("[yellow]Proceeding anonymously. LLM API keys must be provided via environment variables.[/]")
@@ -323,7 +322,7 @@ def main() -> None:
                     write_to_path(fp=source_fp, content=session_response["code"])
 
                 # Update the panels with the initial solution
-                summary_panel.session_id = session_id  # Add session id now that we have it
+                summary_panel.set_session_id(session_id=session_id)  # Add session id now that we have it
                 # Set the step of the progress bar
                 summary_panel.set_step(step=0)
                 # Update the token counts
