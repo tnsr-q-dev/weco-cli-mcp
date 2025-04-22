@@ -198,16 +198,12 @@ def main() -> None:
             )
 
             for step in range(1, steps):
-                # Re-read instructions from the original source (file path or string) BEFORE each suggest call
-                current_additional_instructions = read_additional_instructions(
-                    additional_instructions=args.additional_instructions
-                )
                 # Evaluate the current output and get the next solution
                 eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
                     console=console,
                     session_id=session_id,
                     execution_output=term_out,
-                    additional_instructions=current_additional_instructions,
+                    additional_instructions=None,
                     api_keys=api_keys,
                     timeout=timeout,
                 )
@@ -295,16 +291,12 @@ def main() -> None:
                     transition_delay=0.1,  # Slightly longer delay for evaluation results
                 )
 
-            # Re-read instructions before the final feedback step
-            current_additional_instructions = read_additional_instructions(
-                additional_instructions=args.additional_instructions
-            )
             # Ensure we pass evaluation results for the last step's generated solution
             eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
                 console=console,
                 session_id=session_id,
                 execution_output=term_out,
-                additional_instructions=current_additional_instructions,
+                additional_instructions=None,
                 api_keys=api_keys,
                 timeout=timeout,
             )
