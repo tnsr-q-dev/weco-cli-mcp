@@ -288,7 +288,6 @@ def main() -> None:
             end_optimization_layout = create_end_optimization_layout()
 
             # --- Start Optimization Session ---
-            console.print("[cyan]Starting optimization session...[/]")
             session_response = start_optimization_session(
                 console=console,
                 source_code=source_code,

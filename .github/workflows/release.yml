@@ -5,6 +5,8 @@ on:
     workflows: ["Lint and Format Code"]
     types:
       - completed
+    branches:
+      - main
 
   release:
     types: [published]
@@ -90,7 +92,7 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       run: >-
         gh release create
-        'v0.2.13'
+        'v0.2.12'
         --repo '${{ github.repository }}'
         --notes ""
 
@@ -102,5 +104,5 @@ jobs:
       # sigstore-produced signatures and certificates.
       run: >-
         gh release upload
-        'v0.2.13' dist/**
+        'v0.2.12' dist/**
         --repo '${{ github.repository }}'
