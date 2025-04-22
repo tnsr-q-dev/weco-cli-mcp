@@ -9,6 +9,7 @@ from .utils import format_number
 import pathlib
 from .__init__ import __dashboard_url__
 
+
 class SummaryPanel:
     """Holds a summary of the optimization session."""
 
@@ -32,12 +33,12 @@ class SummaryPanel:
             expand=False,
         )
         self.task_id = self.progress.add_task("", total=total_steps)
-    
+
     def set_session_id(self, session_id: str):
         """Set the session ID."""
         self.session_id = session_id
         self.set_dashboard_url(session_id=session_id)
-    
+
     def set_dashboard_url(self, session_id: str):
         """Set the dashboard URL."""
         self.dashboard_url = f"{__dashboard_url__}/runs/{session_id}"
