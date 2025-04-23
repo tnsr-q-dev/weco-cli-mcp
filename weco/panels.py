@@ -243,11 +243,15 @@ class MetricTreePanel:
 
         return tree
 
-    def get_display(self) -> Panel:
+    def get_display(self, is_done: bool) -> Panel:
         """Get a panel displaying the solution tree."""
         # Make sure the metric tree is built before calling build_rich_tree
         return Panel(
-            self._build_rich_tree(), title="[bold]🔎 Exploring Solutions...", border_style="green", expand=True, padding=(0, 1)
+            self._build_rich_tree(),
+            title="[bold]🔎 Exploring Solutions..." if not is_done else "[bold]🔎 Optimization Complete!",
+            border_style="green",
+            expand=True,
+            padding=(0, 1),
         )
 
 

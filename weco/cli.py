@@ -358,7 +358,7 @@ def main() -> None:
                     sections_to_update=[
                         ("summary", summary_panel.get_display()),
                         ("plan", plan_panel.get_display()),
-                        ("tree", tree_panel.get_display()),
+                        ("tree", tree_panel.get_display(is_done=False)),
                         ("current_solution", current_solution_panel),
                         ("best_solution", best_solution_panel),
                         ("eval_output", eval_output_panel.get_display()),
@@ -406,7 +406,11 @@ def main() -> None:
                     # Get the optimization session status for
                     # the best solution, its score, and the history to plot the tree
                     status_response = get_optimization_session_status(
-                        console=console, session_id=session_id, include_history=True, timeout=timeout
+                        console=console,
+                        session_id=session_id,
+                        include_history=True,
+                        timeout=timeout,
+                        auth_headers=auth_headers,
                     )
 
                     # Update the step of the progress bar
@@ -460,7 +464,7 @@ def main() -> None:
                         sections_to_update=[
                             ("summary", summary_panel.get_display()),
                             ("plan", plan_panel.get_display()),
-                            ("tree", tree_panel.get_display()),
+                            ("tree", tree_panel.get_display(is_done=False)),
                             ("current_solution", current_solution_panel),
                             ("best_solution", best_solution_panel),
                             ("eval_output", eval_output_panel.get_display()),
@@ -493,6 +497,7 @@ def main() -> None:
                     additional_instructions=current_additional_instructions,
                     api_keys=llm_api_keys,
                     timeout=timeout,
+                    auth_headers=auth_headers,
                 )
 
                 # Update the progress bar
@@ -503,7 +508,7 @@ def main() -> None:
                 # Get the optimization session status for
                 # the best solution, its score, and the history to plot the tree
                 status_response = get_optimization_session_status(
-                    console=console, session_id=session_id, include_history=True, timeout=timeout
+                    console=console, session_id=session_id, include_history=True, timeout=timeout, auth_headers=auth_headers
                 )
                 # Build the metric tree
                 tree_panel.build_metric_tree(nodes=status_response["history"])
@@ -532,7 +537,7 @@ def main() -> None:
                     else "[red] No valid solution found.[/]"
                 )
                 end_optimization_layout["summary"].update(summary_panel.get_display(final_message=final_message))
-                end_optimization_layout["tree"].update(tree_panel.get_display())
+                end_optimization_layout["tree"].update(tree_panel.get_display(is_done=True))
                 end_optimization_layout["best_solution"].update(best_solution_panel)
 
                 # Save optimization results
