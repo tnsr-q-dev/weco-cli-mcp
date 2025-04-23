@@ -7,6 +7,7 @@ from rich.syntax import Syntax
 from typing import Dict, List, Optional, Union, Tuple
 from .utils import format_number
 import pathlib
+from .__init__ import __dashboard_url__
 
 
 class SummaryPanel:
@@ -22,6 +23,7 @@ class SummaryPanel:
         self.model = model
         self.runs_dir = runs_dir
         self.session_id = session_id if session_id is not None else "N/A"
+        self.dashboard_url = "N/A"
         self.progress = Progress(
             TextColumn("[progress.description]{task.description}"),
             BarColumn(bar_width=20),
@@ -31,6 +33,15 @@ class SummaryPanel:
             expand=False,
         )
         self.task_id = self.progress.add_task("", total=total_steps)
+
+    def set_session_id(self, session_id: str):
+        """Set the session ID."""
+        self.session_id = session_id
+        self.set_dashboard_url(session_id=session_id)
+
+    def set_dashboard_url(self, session_id: str):
+        """Set the dashboard URL."""
+        self.dashboard_url = f"{__dashboard_url__}/runs/{session_id}"
 
     def set_step(self, step: int):
         """Set the current step."""
@@ -60,6 +71,9 @@ class SummaryPanel:
         summary_table.add_row("")
         # Log directory
         summary_table.add_row(f"[bold cyan]Logs:[/] [blue underline]{self.runs_dir}/{self.session_id}[/]")
+        summary_table.add_row("")
+        # Dashboard link
+        summary_table.add_row(f"[bold cyan]Dashboard:[/] [blue underline]{self.dashboard_url}[/]")
         summary_table.add_row("")
         # Token counts
         summary_table.add_row(
@@ -229,11 +243,15 @@ class MetricTreePanel:
 
         return tree
 
-    def get_display(self) -> Panel:
+    def get_display(self, is_done: bool) -> Panel:
         """Get a panel displaying the solution tree."""
         # Make sure the metric tree is built before calling build_rich_tree
         return Panel(
-            self._build_rich_tree(), title="[bold]🔎 Exploring Solutions...", border_style="green", expand=True, padding=(0, 1)
+            self._build_rich_tree(),
+            title="[bold]🔎 Exploring Solutions..." if not is_done else "[bold]🔎 Optimization Complete!",
+            border_style="green",
+            expand=True,
+            padding=(0, 1),
         )
 
 
