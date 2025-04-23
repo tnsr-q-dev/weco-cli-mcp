@@ -201,14 +201,13 @@ def main() -> None:
     )
 
     # --- Logout Command ---
-    logout_parser = subparsers.add_parser("logout", help="Log out from Weco and clear saved API key.")  # noqa F841
+    _ = subparsers.add_parser("logout", help="Log out from Weco and clear saved API key.")
 
     args = parser.parse_args()
 
     # --- Handle Logout Command ---
     if args.command == "logout":
         clear_api_key()
-        console.print("[green]Logged out successfully.[/]")  # Added feedback
         sys.exit(0)
 
     # --- Handle Run Command ---
@@ -257,7 +256,10 @@ def main() -> None:
             maximize = args.maximize == "true"
             steps = args.steps
             code_generator_config = {"model": args.model}
-            evaluator_config = {"model": args.model}
+            evaluator_config = {
+                "model": args.model,
+                "include_analysis": False,  # NOTE: False for now
+            }
             search_policy_config = {
                 "num_drafts": max(1, math.ceil(0.15 * steps)),
                 "debug_prob": 0.5,
