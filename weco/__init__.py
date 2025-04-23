@@ -1,7 +1,7 @@
 import os
 
 # DO NOT EDIT
-__pkg_version__ = "0.2.12"
+__pkg_version__ = "0.2.13"
 __api_version__ = "v1"
 
 __base_url__ = f"https://api.weco.ai/{__api_version__}"
