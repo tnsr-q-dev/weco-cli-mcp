@@ -9,15 +9,16 @@ from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
 from rich.traceback import install
-from rich.prompt import Prompt  # For user input
-from .api import (  # Keep existing imports
+from rich.prompt import Prompt
+from .api import (
     start_optimization_session,
     evaluate_feedback_then_suggest_next_solution,
     get_optimization_session_status,
-    handle_api_error,  # Ensure handle_api_error is imported if used
+    handle_api_error,
 )
-from .auth import load_weco_api_key, save_api_key, clear_api_key  # Import auth functions
-from weco import __base_url__  # Import base_url for constructing API paths
+
+from . import __base_url__
+from .auth import load_weco_api_key, save_api_key, clear_api_key
 from .panels import (
     SummaryPanel,
     PlanPanel,
@@ -42,20 +43,17 @@ install(show_locals=True)
 console = Console()
 
 
-# --- New Login Function ---
 def perform_login(console: Console):
     """Handles the device login flow."""
     try:
         # 1. Initiate device login
         console.print("Initiating login...")
-        # __base_url__ already contains /v1
-        init_response = requests.post(f"{__base_url__}/auth/device/initiate")  # REMOVED /v1 prefix
+        init_response = requests.post(f"{__base_url__}/auth/device/initiate")
         init_response.raise_for_status()
         init_data = init_response.json()
 
         device_code = init_data["device_code"]
         verification_uri = init_data["verification_uri"]
-        # user_code = init_data.get("user_code") # If using user codes
         expires_in = init_data["expires_in"]
         interval = init_data["interval"]
 
@@ -63,8 +61,6 @@ def perform_login(console: Console):
         console.print("\n[bold yellow]Action Required:[/]")
         console.print("Please open the following URL in your browser to authenticate:")
         console.print(f"[link={verification_uri}]{verification_uri}[/link]")
-        # if user_code:
-        #     console.print(f"And enter the code: [bold cyan]{user_code}[/]")
         console.print(f"This request will expire in {expires_in // 60} minutes.")
         console.print("Attempting to open the authentication page in your default browser...")  # Notify user
 
