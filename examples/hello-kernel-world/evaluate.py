@@ -62,20 +62,19 @@ def get_inputs(B, N, device):
 
 @torch.no_grad()
 def bench(f, inputs, n_warmup, n_rep):
-    # Warm up
+    device_type = inputs.device.type
+
+    # warm up
     for _ in range(n_warmup):
         f(inputs)  # noqa
+    if device_type == "cuda":
+        torch.cuda.synchronize()
+    elif device_type == "mps":
+        torch.mps.synchronize()
 
-    # Benchmark
-    device_type = inputs.device.type
+    # benchmark
     t_avg = 0.0
     for _ in range(n_rep):
-        # Clear cache before timing
-        if device_type == "cuda":
-            torch.cuda.empty_cache()
-        elif device_type == "mps":
-            torch.mps.empty_cache()
-
         # time forward pass
         start_time = time.time()
         f(inputs)

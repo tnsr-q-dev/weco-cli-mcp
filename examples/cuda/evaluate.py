@@ -1,4 +1,3 @@
-import time
 import sys
 import os
 import pathlib
@@ -78,22 +77,27 @@ def get_inputs(batch_size, seq_len, n_embd, device):
     return torch.randn(batch_size, seq_len, n_embd, device=device, dtype=torch.float32)
 
 
+@torch.no_grad()
 def bench(f, inputs, n_warmup, n_rep):
-    with torch.no_grad():
-        # warmup
-        for _ in range(n_warmup):
-            f(inputs)  # noqa
+    start_event = torch.cuda.Event(enable_timing=True)
+    end_event = torch.cuda.Event(enable_timing=True)
 
-        # benchmark
-        t_avg = 0.0
-        for _ in range(n_rep):
-            torch.cuda.empty_cache()  # Clear cache before timing
-            start_time = time.time()
-            f(inputs)
-            torch.cuda.synchronize()  # Wait for all computations to complete
-            t_avg += time.time() - start_time
-        t_avg /= n_rep * 1e-3
-        return t_avg
+    # warmup
+    for _ in range(n_warmup):
+        f(inputs)  # noqa
+    torch.cuda.synchronize()
+
+    # benchmark
+    t_avg_ms = 0.0
+    for _ in range(n_rep):
+        # time the forward pass
+        start_event.record()
+        f(inputs)
+        end_event.record()
+        # wait for all computations to complete
+        torch.cuda.synchronize()
+        t_avg_ms += start_event.elapsed_time(end_event)
+    return t_avg_ms / n_rep
 
 
 if __name__ == "__main__":
@@ -113,7 +117,7 @@ if __name__ == "__main__":
     seq_len = 256
     n_embd = 768
     n_head = 8
-    # turn off dropout to measure correctness well
+    # turn off dropout to measure correctness
     attn_pdrop = 0.0
     resid_pdrop = 0.0
 

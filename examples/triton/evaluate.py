@@ -1,4 +1,3 @@
-import time
 import sys
 import pathlib
 import importlib
@@ -76,20 +75,24 @@ def get_inputs(batch_size, seq_len, n_embd, device):
 
 @torch.no_grad()
 def bench(f, inputs, n_warmup, n_rep):
+    start_event = torch.cuda.Event(enable_timing=True)
+    end_event = torch.cuda.Event(enable_timing=True)
+
     # warmup
     for _ in range(n_warmup):
         f(inputs)  # noqa
+    torch.cuda.synchronize()
 
     # benchmark
-    t_avg = 0.0
+    t_avg_ms = 0.0
     for _ in range(n_rep):
-        torch.cuda.empty_cache()  # Clear cache before timing
-        start_time = time.time()
+        start_event.record()
         f(inputs)
-        torch.cuda.synchronize()  # Wait for all computations to complete
-        t_avg += time.time() - start_time
-    t_avg /= n_rep * 1e-3
-    return t_avg
+        end_event.record()
+        # wait for all computations to complete
+        torch.cuda.synchronize()
+        t_avg_ms += start_event.elapsed_time(end_event)
+    return t_avg_ms / n_rep
 
 
 if __name__ == "__main__":

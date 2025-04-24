@@ -55,15 +55,15 @@ def load_module_from_path(module_path: str, add_to_sys_modules: bool = False):
 # Benchmark
 ########################################################
 def get_inputs(batch_size, img_height, img_width, img_channels):
-    # MLX doesn't use device parameter like PyTorch, as it automatically uses Metal
     return mx.random.normal(shape=(batch_size, img_height, img_width, img_channels), dtype=mx.float32)
 
 
 def bench(f, inputs, n_warmup, n_rep):
-    # Warm up
+    # warm up
     for _ in range(n_warmup):
         result = f(inputs)
         mx.eval(result)  # Force computation due to lazy evaluation
+    mx.synchronize()  # Wait for all computations to complete
 
     t_avg = 0.0
     for _ in range(n_rep):
