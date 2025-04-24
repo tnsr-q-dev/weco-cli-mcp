@@ -265,14 +265,14 @@ def main() -> None:
                 "debug_prob": 0.5,
                 "max_debug_depth": max(1, math.ceil(0.1 * steps)),
             }
+            # API request timeout
+            timeout = 800
             # Read additional instructions
             additional_instructions = read_additional_instructions(additional_instructions=args.additional_instructions)
             # Read source code path
             source_fp = pathlib.Path(args.source)
             # Read source code content
             source_code = read_from_path(fp=source_fp, is_json=False)
-            # API request timeout
-            timeout = 800
 
             # --- Panel Initialization ---
             summary_panel = SummaryPanel(
@@ -309,10 +309,6 @@ def main() -> None:
                 session_id = session_response["session_id"]
                 runs_dir = pathlib.Path(args.log_dir) / session_id
                 runs_dir.mkdir(parents=True, exist_ok=True)
-
-                # Save the original code (.runs/<session-id>/original.<extension>)
-                runs_copy_source_fp = runs_dir / f"original{source_fp.suffix}"  # Use correct suffix
-                write_to_path(fp=runs_copy_source_fp, content=source_code)
 
                 # Write the initial code string to the source file path (if not preserving)
                 if not args.preserve_source:
@@ -380,7 +376,8 @@ def main() -> None:
                     transition_delay=0.1,
                 )
 
-                for step in range(1, steps):
+                # Starting from step 1 to steps (inclusive) because the baseline solution is step 0, so we want to optimize for steps worth of steps
+                for step in range(1, steps + 1):
                     # Re-read instructions from the original source (file path or string) BEFORE each suggest call
                     current_additional_instructions = read_additional_instructions(
                         additional_instructions=args.additional_instructions
@@ -553,9 +550,7 @@ def main() -> None:
                     best_solution_score = None
 
                 if best_solution_code is None or best_solution_score is None:
-                    best_solution_content = (
-                        f"# Weco could not find a better solution\n\n{read_from_path(fp=runs_copy_source_fp, is_json=False)}"
-                    )
+                    best_solution_content = f"# Weco could not find a better solution\n\n{read_from_path(fp=runs_dir / f'step_0{source_fp.suffix}', is_json=False)}"
                 else:
                     # Format score for the comment
                     best_score_str = (
