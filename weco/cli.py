@@ -310,6 +310,9 @@ def main() -> None:
                 runs_dir = pathlib.Path(args.log_dir) / session_id
                 runs_dir.mkdir(parents=True, exist_ok=True)
 
+                # Write the initial code string to the logs
+                write_to_path(fp=runs_dir / f"step_0{source_fp.suffix}", content=session_response["code"])
+
                 # Write the initial code string to the source file path (if not preserving)
                 if not args.preserve_source:
                     write_to_path(fp=source_fp, content=session_response["code"])
