@@ -34,12 +34,12 @@ This example uses `gpt-4o-mini` via the OpenAI API by default. Ensure your `OPEN
     ```
 4.  **Run Weco.** The command below iteratively modifies `EXTRA_INSTRUCTIONS` in `optimize.py`, runs `eval.py` to evaluate the prompt's effectiveness, reads the printed accuracy, and keeps the best prompt variations found.
     ```bash
-    weco --source optimize.py \
-         --eval-command "python eval.py" \
-         --metric accuracy \
-         --maximize true \
-         --steps 40 \
-         --model gemini-2.5-pro-exp-03-25
+    weco run --source optimize.py \
+             --eval-command "python eval.py" \
+             --metric accuracy \
+             --maximize true \
+             --steps 40 \
+             --model gemini-2.5-pro-exp-03-25
     ```
     *Note: You can replace `--model gemini-2.5-pro-exp-03-25` with another powerful model like `o3` if you have the respective API keys set.*
 

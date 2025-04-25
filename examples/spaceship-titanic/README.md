@@ -38,13 +38,13 @@ This example uses the `README.md` file (this file) to provide additional instruc
 Run the following command to start optimizing the model:
 
 ```bash
-weco --source optimize.py \
-     --eval-command "python optimize.py && python evaluate.py" \
-     --metric accuracy \
-     --maximize true \
-     --steps 10 \
-     --model gemini-2.5-pro-exp-03-25 \
-     --additional-instructions README.md
+weco run --source optimize.py \
+         --eval-command "python optimize.py && python evaluate.py" \
+         --metric accuracy \
+         --maximize true \
+         --steps 10 \
+         --model gemini-2.5-pro-exp-03-25 \
+         --additional-instructions README.md
 ```
 
 ### Explanation

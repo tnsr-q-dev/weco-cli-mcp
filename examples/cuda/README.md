@@ -18,13 +18,13 @@ This example uses a separate Markdown file (`guide.md`) to provide detailed inst
 Run the following command to start the optimization process:
 
 ```bash
-weco --source optimize.py \
-     --eval-command "python evaluate.py --solution-path optimize.py" \
-     --metric speedup \
-     --maximize true \
-     --steps 30 \
-     --model gemini-2.5-pro-exp-03-25 \
-     --additional-instructions guide.md
+weco run --source optimize.py \
+         --eval-command "python evaluate.py --solution-path optimize.py" \
+         --metric speedup \
+         --maximize true \
+         --steps 30 \
+         --model gemini-2.5-pro-exp-03-25 \
+         --additional-instructions guide.md
 ```
 
 ### Explanation

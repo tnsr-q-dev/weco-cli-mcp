@@ -16,13 +16,13 @@ This example demonstrates using Weco to optimize a causal multi-head self-attent
 Run the following command to start the optimization process:
 
 ```bash
-weco --source optimize.py \
-     --eval-command "python evaluate.py --solution-path optimize.py" \
-     --metric speedup \
-     --maximize true \
-     --steps 30 \
-     --model gemini-2.5-pro-exp-03-25 \
-     --additional-instructions "Use triton to optimize the code while ensuring a small max float diff. Maintain the same code format."
+weco run --source optimize.py \
+         --eval-command "python evaluate.py --solution-path optimize.py" \
+         --metric speedup \
+         --maximize true \
+         --steps 30 \
+         --model gemini-2.5-pro-exp-03-25 \
+         --additional-instructions "Use triton to optimize the code while ensuring a small max float diff. Maintain the same code format."
 ```
 
 ### Explanation
