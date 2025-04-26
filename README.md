@@ -20,7 +20,7 @@ https://github.com/user-attachments/assets/cb724ef1-bff6-4757-b457-d3b2201ede81
 
 The `weco` CLI leverages a tree search approach guided by Large Language Models (LLMs) to iteratively explore and refine your code. It automatically applies changes, runs your evaluation script, parses the results, and proposes further improvements based on the specified goal.
 
-![image](https://github.com/user-attachments/assets/a6ed63fa-9c40-498e-aa98-a873e5786509)
+![image](assets/example-optimization.gif)
 
 ---
 
