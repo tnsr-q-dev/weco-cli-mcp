@@ -4,9 +4,7 @@ from pathlib import Path
 
 
 def submit_submission(submission_path: Path):
-    kaggle.api.competition_submit(
-        submission_path, "My first submission using weco agent", "spaceship-titanic"
-    )
+    kaggle.api.competition_submit(submission_path, "My first submission using weco agent", "spaceship-titanic")
 
 
 if __name__ == "__main__":

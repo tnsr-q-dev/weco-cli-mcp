@@ -11,9 +11,7 @@ warnings.filterwarnings("ignore", category=UserWarning)  # keep Weco's panel tid
 
 
 def train(df: pd.DataFrame, test_df: pd.DataFrame, random_state: int = 0) -> float:
-    train_df, val_df = train_test_split(
-        df, test_size=0.10, random_state=random_state, stratify=df["Transported"]
-    )
+    train_df, val_df = train_test_split(df, test_size=0.10, random_state=random_state, stratify=df["Transported"])
 
     y_train = train_df.pop("Transported")
     y_val = val_df.pop("Transported")
@@ -27,9 +25,7 @@ def train(df: pd.DataFrame, test_df: pd.DataFrame, random_state: int = 0) -> flo
     # Save the model and generate a submission file on test
     joblib.dump(model, "model.joblib")
     test_preds = model.predict(test_df)
-    submission_df = pd.DataFrame(
-        {"PassengerId": test_df["PassengerId"], "Transported": test_preds.astype(bool)}
-    )
+    submission_df = pd.DataFrame({"PassengerId": test_df["PassengerId"], "Transported": test_preds.astype(bool)})
     submission_df.to_csv("submission.csv", index=False)
 
     return acc
