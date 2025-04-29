@@ -8,7 +8,7 @@ Weco systematically optimizes your code, guided directly by your evaluation metr
 
 Example applications include:
 
-- **GPU Kernel Optimization**: Reimplement PyTorch functions using CUDA, Triton or Metal, optimizing for `latency`, `throughput`, or `memory_bandwidth`.
+- **GPU Kernel Optimization**: Reimplement PyTorch functions using CUDA or Triton optimizing for `latency`, `throughput`, or `memory_bandwidth`.
 - **Model Development**: Tune feature transformations or architectures, optimizing for `validation_accuracy`, `AUC`, or `Sharpe Ratio`.
 - **Prompt Engineering**: Refine prompts for LLMs, optimizing for `win_rate`, `relevance`, or `format_adherence`
 
@@ -79,7 +79,7 @@ This command starts the optimization process.
 
 This basic example shows how to optimize a simple PyTorch function for speedup.
 
-For more advanced examples, including **[Metal/MLX](/examples/metal/README.md), [Triton](/examples/triton/README.md), [CUDA kernel optimization](/examples/cuda/README.md)**, and **[ML model optimization](/examples/spaceship-titanic/README.md)**, please see the `README.md` files within the corresponding subdirectories under the [`examples/`](./examples/) folder.
+For more advanced examples, including [Triton](/examples/triton/README.md), [CUDA kernel optimization](/examples/cuda/README.md)**, and **[ML model optimization](/examples/spaceship-titanic/README.md)**, please see the `README.md` files within the corresponding subdirectories under the [`examples/`](./examples/) folder.
 
 ```bash
 # Navigate to the example directory
