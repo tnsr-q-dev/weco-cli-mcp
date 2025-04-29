@@ -121,6 +121,7 @@ class Node:
         self.metric = metric
         self.is_buggy = is_buggy
         self.evaluated = True
+        self.name = ""
 
 
 class MetricTree:
@@ -181,16 +182,17 @@ class MetricTreePanel:
         nodes.sort(key=lambda x: x["step"])
 
         # Finally build the new tree
-        for node in nodes:
-            self.metric_tree.add_node(
-                Node(
-                    id=node["solution_id"],
-                    parent_id=node["parent_id"],
-                    code=node["code"],
-                    metric=node["metric_value"],
-                    is_buggy=node["is_buggy"],
-                )
+        for i, node in enumerate(nodes):
+            node = Node(
+                id=node["solution_id"],
+                parent_id=node["parent_id"],
+                code=node["code"],
+                metric=node["metric_value"],
+                is_buggy=node["is_buggy"],
             )
+            if i == 0:
+                node.name = "baseline"
+            self.metric_tree.add_node(node)
 
     def set_unevaluated_node(self, node_id: str):
         """Set the unevaluated node."""
@@ -232,12 +234,15 @@ class MetricTreePanel:
                     style = None
                     text = f"{node.metric:.3f}"
 
+                # add the node name info
+                text = f"{node.name} {text}".strip()
+
             s = f"[{f'{style} ' if style is not None else ''}{color}]● {text}"
             subtree = tree.add(s)
             for child in node.children:
                 append_rec(child, subtree)
 
-        tree = Tree("🌳")
+        tree = Tree("", hide_root=True)
         for n in self.metric_tree.get_draft_nodes():
             append_rec(n, tree)
 

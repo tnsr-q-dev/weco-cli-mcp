@@ -258,7 +258,7 @@ def main() -> None:
             code_generator_config = {"model": args.model}
             evaluator_config = {
                 "model": args.model,
-                "include_analysis": False,  # NOTE: False for now
+                "include_analysis": True,
             }
             search_policy_config = {
                 "num_drafts": max(1, math.ceil(0.15 * steps)),
@@ -388,7 +388,6 @@ def main() -> None:
 
                     # Send feedback and get next suggestion
                     eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
-                        console=console,
                         session_id=session_id,
                         execution_output=term_out,
                         additional_instructions=current_additional_instructions,  # Pass current instructions
@@ -408,11 +407,7 @@ def main() -> None:
                     # Get the optimization session status for
                     # the best solution, its score, and the history to plot the tree
                     status_response = get_optimization_session_status(
-                        console=console,
-                        session_id=session_id,
-                        include_history=True,
-                        timeout=timeout,
-                        auth_headers=auth_headers,
+                        session_id=session_id, include_history=True, timeout=timeout, auth_headers=auth_headers
                     )
 
                     # Update the step of the progress bar
@@ -493,7 +488,6 @@ def main() -> None:
 
                 # Ensure we pass evaluation results for the last step's generated solution
                 eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
-                    console=console,
                     session_id=session_id,
                     execution_output=term_out,
                     additional_instructions=current_additional_instructions,
@@ -510,7 +504,7 @@ def main() -> None:
                 # Get the optimization session status for
                 # the best solution, its score, and the history to plot the tree
                 status_response = get_optimization_session_status(
-                    console=console, session_id=session_id, include_history=True, timeout=timeout, auth_headers=auth_headers
+                    session_id=session_id, include_history=True, timeout=timeout, auth_headers=auth_headers
                 )
                 # Build the metric tree
                 tree_panel.build_metric_tree(nodes=status_response["history"])
@@ -575,7 +569,11 @@ def main() -> None:
             console.print(end_optimization_layout)
 
         except Exception as e:
-            console.print(Panel(f"[bold red]Error: {str(e)}", title="[bold red]Error", border_style="red"))
+            try:
+                error_message = e.response.json()["detail"]
+            except Exception:
+                error_message = str(e)
+            console.print(Panel(f"[bold red]Error: {error_message}", title="[bold red]Error", border_style="red"))
             # Print traceback for debugging
-            console.print_exception(show_locals=True)
+            # console.print_exception(show_locals=False)
             sys.exit(1)
