@@ -256,10 +256,7 @@ def main() -> None:
             maximize = args.maximize == "true"
             steps = args.steps
             code_generator_config = {"model": args.model}
-            evaluator_config = {
-                "model": args.model,
-                "include_analysis": True,
-            }
+            evaluator_config = {"model": args.model, "include_analysis": True}
             search_policy_config = {
                 "num_drafts": max(1, math.ceil(0.15 * steps)),
                 "debug_prob": 0.5,
