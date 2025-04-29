@@ -43,8 +43,6 @@ jobs:
             OLD_VERSION=""
           fi
 
-          OLD_VERSION="0.2.15"
-
           echo "Previous version: $OLD_VERSION"
           echo "Current  version: $NEW_VERSION"
 
