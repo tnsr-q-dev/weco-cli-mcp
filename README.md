@@ -1,8 +1,17 @@
+<div align="center">
+
 # Weco: The AI Research Engineer
 
-[![Python](https://img.shields.io/badge/Python-3.12.0-blue)](https://www.python.org)
+[![Python](https://img.shields.io/badge/Python-3.8.0+-blue)](https://www.python.org)
+[![docs](https://img.shields.io/website?url=https://docs.weco.ai/&label=docs)](https://docs.weco.ai/)
 [![PyPI version](https://badge.fury.io/py/weco.svg)](https://badge.fury.io/py/weco)
 [![AIDE](https://img.shields.io/badge/AI--Driven_Exploration-arXiv-orange?style=flat-square&logo=arxiv)](https://arxiv.org/abs/2502.13138)
+
+<code>pip install weco</code>
+
+</div>
+
+---
 
 Weco systematically optimizes your code, guided directly by your evaluation metrics.
 
