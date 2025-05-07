@@ -194,11 +194,6 @@ def main() -> None:
         type=str,
         help="Description of additional instruction or path to a file containing additional instructions",
     )
-    run_parser.add_argument(
-        "--preserve-source",
-        action="store_true",
-        help="If set, do not overwrite the original source file; only save modified versions in the runs directory",
-    )
 
     # --- Logout Command ---
     _ = subparsers.add_parser("logout", help="Log out from Weco and clear saved API key.")
@@ -310,9 +305,8 @@ def main() -> None:
                 # Write the initial code string to the logs
                 write_to_path(fp=runs_dir / f"step_0{source_fp.suffix}", content=session_response["code"])
 
-                # Write the initial code string to the source file path (if not preserving)
-                if not args.preserve_source:
-                    write_to_path(fp=source_fp, content=session_response["code"])
+                # Write the initial code string to the source file path
+                write_to_path(fp=source_fp, content=session_response["code"])
 
                 # Update the panels with the initial solution
                 summary_panel.set_session_id(session_id=session_id)  # Add session id now that we have it
@@ -398,8 +392,7 @@ def main() -> None:
                     )
 
                     # Write the next solution to the source file
-                    if not args.preserve_source:
-                        write_to_path(fp=source_fp, content=eval_and_next_solution_response["code"])
+                    write_to_path(fp=source_fp, content=eval_and_next_solution_response["code"])
 
                     # Get the optimization session status for
                     # the best solution, its score, and the history to plot the tree
@@ -560,8 +553,7 @@ def main() -> None:
                 write_to_path(fp=runs_dir / f"best{source_fp.suffix}", content=best_solution_content)
 
                 # write the best solution to the source file
-                if not args.preserve_source:
-                    write_to_path(fp=source_fp, content=best_solution_content)
+                write_to_path(fp=source_fp, content=best_solution_content)
 
             console.print(end_optimization_layout)
 
