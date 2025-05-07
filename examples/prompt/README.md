@@ -1,4 +1,3 @@
-# weco-cli/examples/prompt/README.md
 # AIME Prompt Engineering Example with Weco
 
 This example shows how **Weco** can iteratively improve a prompt for solving American Invitational Mathematics Examination (AIME) problems. The experiment runs locally, requires only two short Python files, and aims to improve the accuracy metric.
