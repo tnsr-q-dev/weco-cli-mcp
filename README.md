@@ -88,7 +88,7 @@ This command starts the optimization process.
 
 This basic example shows how to optimize a simple PyTorch function for speedup.
 
-For more advanced examples, including [Triton](/examples/triton/README.md), [CUDA kernel optimization](/examples/cuda/README.md)**, and **[ML model optimization](/examples/spaceship-titanic/README.md)**, please see the `README.md` files within the corresponding subdirectories under the [`examples/`](./examples/) folder.
+For more advanced examples, including [Triton](/examples/triton/README.md), [CUDA kernel optimization](/examples/cuda/README.md), [ML model optimization](/examples/spaceship-titanic/README.md), and [prompt engineering for math problems](https://github.com/WecoAI/weco-cli/tree/main/examples/prompt), please see the `README.md` files within the corresponding subdirectories under the [`examples/`](./examples/) folder.
 
 ```bash
 # Navigate to the example directory
