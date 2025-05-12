@@ -27,10 +27,8 @@ This example uses `gpt-4o-mini` via the OpenAI API by default. Ensure your `OPEN
     # Ensure you have weco installed: pip install weco
     pip install openai datasets # Add any other dependencies if needed
     ```
-3.  **Set your OpenAI API Key.**
-    ```bash
-    export OPENAI_API_KEY="your_openai_api_key_here"
-    ```
+3.  **Set your Google Gemini API Key.**
+    `export GEMINI_API_KEY="your_key_here"` (Google AI Studio has a free API usage quota. Create a key [here](https://aistudio.google.com/apikey) to use `weco` for free.)
 4.  **Run Weco.** The command below iteratively modifies `EXTRA_INSTRUCTIONS` in `optimize.py`, runs `eval.py` to evaluate the prompt's effectiveness, reads the printed accuracy, and keeps the best prompt variations found.
     ```bash
     weco run --source optimize.py \
