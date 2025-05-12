@@ -35,25 +35,25 @@ def start_optimization_session(
     """Start the optimization session."""
     with console.status("[bold green]Starting Optimization..."):
         try:
-        response = requests.post(
-            f"{__base_url__}/sessions",  # Path is relative to base_url
-            json={
-                "source_code": source_code,
-                "additional_instructions": additional_instructions,
-                "objective": {"evaluation_command": evaluation_command, "metric_name": metric_name, "maximize": maximize},
-                "optimizer": {
-                    "steps": steps,
-                    "code_generator": code_generator_config,
-                    "evaluator": evaluator_config,
-                    "search_policy": search_policy_config,
+            response = requests.post(
+                f"{__base_url__}/sessions",  # Path is relative to base_url
+                json={
+                    "source_code": source_code,
+                    "additional_instructions": additional_instructions,
+                    "objective": {"evaluation_command": evaluation_command, "metric_name": metric_name, "maximize": maximize},
+                    "optimizer": {
+                        "steps": steps,
+                        "code_generator": code_generator_config,
+                        "evaluator": evaluator_config,
+                        "search_policy": search_policy_config,
+                    },
+                    "metadata": {"client_name": "cli", "client_version": __pkg_version__, **api_keys},
                 },
-                "metadata": {"client_name": "cli", "client_version": __pkg_version__, **api_keys},
-            },
-            headers=auth_headers,  # Add headers
-            timeout=timeout,
-        )
-        response.raise_for_status()
-        return response.json()
+                headers=auth_headers,  # Add headers
+                timeout=timeout,
+            )
+            response.raise_for_status()
+            return response.json()
         except requests.exceptions.HTTPError as e:
             handle_api_error(e, console)
             sys.exit(1) # Exit if starting session fails
@@ -72,18 +72,18 @@ def evaluate_feedback_then_suggest_next_solution(
 ) -> Dict[str, Any]:
     """Evaluate the feedback and suggest the next solution."""
     try:
-    response = requests.post(
-        f"{__base_url__}/sessions/{session_id}/suggest",  # Path is relative to base_url
-        json={
-            "execution_output": execution_output,
-            "additional_instructions": additional_instructions,
-            "metadata": {**api_keys},
-        },
-        headers=auth_headers,  # Add headers
-        timeout=timeout,
-    )
-    response.raise_for_status()
-    return response.json()
+        response = requests.post(
+            f"{__base_url__}/sessions/{session_id}/suggest",  # Path is relative to base_url
+            json={
+                "execution_output": execution_output,
+                "additional_instructions": additional_instructions,
+                "metadata": {**api_keys},
+            },
+            headers=auth_headers,  # Add headers
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        return response.json()
     except requests.exceptions.HTTPError as e:
         # Allow caller to handle suggest errors, maybe retry or terminate
         handle_api_error(e, Console()) # Use default console if none passed
@@ -98,14 +98,14 @@ def get_optimization_session_status(
 ) -> Dict[str, Any]:
     """Get the current status of the optimization session."""
     try:
-    response = requests.get(
-        f"{__base_url__}/sessions/{session_id}",  # Path is relative to base_url
-        params={"include_history": include_history},
-        headers=auth_headers,
-        timeout=timeout,
-    )
-    response.raise_for_status()
-    return response.json()
+        response = requests.get(
+            f"{__base_url__}/sessions/{session_id}",  # Path is relative to base_url
+            params={"include_history": include_history},
+            headers=auth_headers,
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        return response.json()
     except requests.exceptions.HTTPError as e:
         handle_api_error(e, Console()) # Use default console
         raise # Re-raise
