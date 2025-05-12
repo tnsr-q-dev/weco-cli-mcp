@@ -5,6 +5,9 @@ import math
 import time
 import requests
 import webbrowser
+import threading
+import signal
+import traceback
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
@@ -15,6 +18,8 @@ from .api import (
     evaluate_feedback_then_suggest_next_solution,
     get_optimization_session_status,
     handle_api_error,
+    send_heartbeat,
+    report_termination,
 )
 
 from . import __base_url__
@@ -41,6 +46,54 @@ from .utils import (
 
 install(show_locals=True)
 console = Console()
+
+# --- Global variable for heartbeat thread ---
+heartbeat_thread = None
+stop_heartbeat_event = threading.Event()
+current_session_id_for_heartbeat = None
+current_auth_headers_for_heartbeat = {}
+
+# --- Heartbeat Sender Class ---
+class HeartbeatSender(threading.Thread):
+    def __init__(self, session_id: str, auth_headers: dict, stop_event: threading.Event, interval: int = 30):
+        super().__init__(daemon=True) # Daemon thread exits when main thread exits
+        self.session_id = session_id
+        self.auth_headers = auth_headers
+        self.interval = interval
+        self.stop_event = stop_event
+
+    def run(self):
+        print("[dim]Heartbeat thread started.[/dim]", file=sys.stderr)
+        while not self.stop_event.is_set():
+            if not send_heartbeat(self.session_id, self.auth_headers):
+                # Log failure, but continue trying (backend timeout is the fallback)
+                pass # Error is printed within send_heartbeat
+            # Wait for the interval OR until the stop event is set
+            self.stop_event.wait(self.interval)
+        print("[dim]Heartbeat thread stopped.[/dim]", file=sys.stderr)
+
+# --- Signal Handling ---
+def signal_handler(signum, frame):
+    signal_name = signal.Signals(signum).name
+    console.print(f"\n[bold yellow]Termination signal ({signal_name}) received. Shutting down...[/]")
+
+    # Stop heartbeat thread
+    stop_heartbeat_event.set()
+    if heartbeat_thread and heartbeat_thread.is_alive():
+        heartbeat_thread.join(timeout=2) # Give it a moment to stop
+
+    # Report termination (best effort)
+    if current_session_id_for_heartbeat:
+        report_termination(
+            session_id=current_session_id_for_heartbeat,
+            status_update="terminated",
+            reason=f"user_terminated_{signal_name.lower()}",
+            details=f"Process terminated by signal {signal_name} ({signum}).",
+            auth_headers=current_auth_headers_for_heartbeat
+        )
+
+    # Exit gracefully
+    sys.exit(0)
 
 
 def perform_login(console: Console):
@@ -161,6 +214,10 @@ def perform_login(console: Console):
 
 def main() -> None:
     """Main function for the Weco CLI."""
+    # Setup signal handlers
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     # --- Argument Parsing ---
     parser = argparse.ArgumentParser(
         description="[bold cyan]Weco CLI[/]", formatter_class=argparse.RawDescriptionHelpFormatter
@@ -212,6 +269,10 @@ def main() -> None:
 
     # --- Handle Run Command ---
     elif args.command == "run":
+        global heartbeat_thread, current_session_id_for_heartbeat, current_auth_headers_for_heartbeat # Allow modification of globals
+
+        session_id = None # Initialize session_id
+        optimization_completed_normally = False # Flag for finally block
         # --- Check Authentication ---
         weco_api_key = load_weco_api_key()
         llm_api_keys = read_api_keys_from_env()  # Read keys from client environment
@@ -243,10 +304,9 @@ def main() -> None:
 
         # --- Prepare API Call Arguments ---
         auth_headers = {}
-
         if weco_api_key:
             auth_headers["Authorization"] = f"Bearer {weco_api_key}"
-            # Backend will decide whether to use client keys based on auth status
+        current_auth_headers_for_heartbeat = auth_headers # Store for signal handler
 
         # --- Main Run Logic ---
         try:
@@ -294,16 +354,22 @@ def main() -> None:
                 evaluator_config=evaluator_config,
                 search_policy_config=search_policy_config,
                 additional_instructions=additional_instructions,
-                api_keys=llm_api_keys,  # Pass client LLM keys
-                auth_headers=auth_headers,  # Pass Weco key if logged in
+                api_keys=llm_api_keys,
+                auth_headers=auth_headers,
                 timeout=timeout,
             )
+            session_id = session_response["session_id"]
+            current_session_id_for_heartbeat = session_id # Store for signal handler/finally
+
+            # --- Start Heartbeat Thread ---
+            stop_heartbeat_event.clear() # Ensure event is clear before starting
+            heartbeat_thread = HeartbeatSender(session_id, auth_headers, stop_heartbeat_event)
+            heartbeat_thread.start()
 
             # --- Live Update Loop ---
             refresh_rate = 4
             with Live(layout, refresh_per_second=refresh_rate, screen=True) as live:
                 # Define the runs directory (.runs/<session-id>)
-                session_id = session_response["session_id"]
                 runs_dir = pathlib.Path(args.log_dir) / session_id
                 runs_dir.mkdir(parents=True, exist_ok=True)
 
@@ -364,6 +430,9 @@ def main() -> None:
                     transition_delay=0.1,
                 )
 
+                # Send initial heartbeat immediately after starting
+                send_heartbeat(session_id, auth_headers)
+
                 # Run evaluation on the initial solution
                 term_out = run_evaluation(eval_command=args.eval_command)
 
@@ -384,14 +453,22 @@ def main() -> None:
                     )
 
                     # Send feedback and get next suggestion
-                    eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
-                        session_id=session_id,
-                        execution_output=term_out,
-                        additional_instructions=current_additional_instructions,  # Pass current instructions
-                        api_keys=llm_api_keys,  # Pass client LLM keys
-                        auth_headers=auth_headers,  # Pass Weco key if logged in
-                        timeout=timeout,
-                    )
+                    try:
+                        eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
+                            session_id=session_id,
+                            execution_output=term_out,
+                            additional_instructions=current_additional_instructions,  # Pass current instructions
+                            api_keys=llm_api_keys,  # Pass client LLM keys
+                            auth_headers=auth_headers,  # Pass Weco key if logged in
+                            timeout=timeout,
+                        )
+                    except (requests.exceptions.HTTPError, requests.exceptions.RequestException) as suggest_error:
+                         # If suggest fails, we consider it a CLI error and break the loop
+                         console.print(f"\n[bold red]Error communicating with API during step {step}. Stopping optimization.[/]")
+                         # Error details should have been printed by handle_api_error or the exception handler in evaluate_feedback_then_suggest_next_solution
+                         # Prepare to report error in finally block
+                         raise RuntimeError(f"API error during suggest at step {step}") from suggest_error
+
                     # Save next solution (.runs/<session-id>/step_<step>.<extension>)
                     write_to_path(
                         fp=runs_dir / f"step_{step}{source_fp.suffix}", content=eval_and_next_solution_response["code"]
@@ -483,15 +560,19 @@ def main() -> None:
                     additional_instructions=args.additional_instructions
                 )
 
-                # Ensure we pass evaluation results for the last step's generated solution
-                eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
-                    session_id=session_id,
-                    execution_output=term_out,
-                    additional_instructions=current_additional_instructions,
-                    api_keys=llm_api_keys,
-                    timeout=timeout,
-                    auth_headers=auth_headers,
-                )
+                # Final evaluation report
+                try:
+                    eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
+                        session_id=session_id,
+                        execution_output=term_out,
+                        additional_instructions=current_additional_instructions,
+                        api_keys=llm_api_keys,
+                        timeout=timeout,
+                        auth_headers=auth_headers,
+                    )
+                except (requests.exceptions.HTTPError, requests.exceptions.RequestException) as suggest_error:
+                     console.print("\n[bold red]Error communicating with API during final evaluation report. Results might be incomplete.[/]")
+                     raise RuntimeError("API error during final suggest call") from suggest_error
 
                 # Update the progress bar
                 summary_panel.set_step(step=steps)
@@ -563,14 +644,75 @@ def main() -> None:
                 if not args.preserve_source:
                     write_to_path(fp=source_fp, content=best_solution_content)
 
+                # Mark as completed normally for the finally block
+                optimization_completed_normally = True
+
             console.print(end_optimization_layout)
 
         except Exception as e:
+            # Catch errors during the main optimization loop or setup
             try:
-                error_message = e.response.json()["detail"]
+                error_message = e.response.json()["detail"] # Try to get API error detail
             except Exception:
-                error_message = str(e)
-            console.print(Panel(f"[bold red]Error: {error_message}", title="[bold red]Error", border_style="red"))
-            # Print traceback for debugging
+                error_message = str(e) # Otherwise, use the exception string
+            console.print(Panel(f"[bold red]Error: {error_message}", title="[bold red]Optimization Error", border_style="red"))
+            # Print traceback for debugging if needed (can be noisy)
             # console.print_exception(show_locals=False)
-            sys.exit(1)
+
+            # Ensure optimization_completed_normally is False
+            optimization_completed_normally = False
+
+            # Prepare details for termination report
+            error_details = traceback.format_exc()
+
+            # Exit code will be handled by finally block or sys.exit below
+            exit_code = 1 # Indicate error
+            # No sys.exit here, let finally block run
+
+        finally:
+            # This block runs whether the try block completed normally or raised an exception
+
+            # Stop heartbeat thread
+            stop_heartbeat_event.set()
+            if heartbeat_thread and heartbeat_thread.is_alive():
+                print("[dim]Waiting for heartbeat thread to finish...[/dim]", file=sys.stderr)
+                heartbeat_thread.join(timeout=2) # Give it a moment to stop
+
+            # Report final status if a session was started
+            if session_id:
+                final_status = "unknown"
+                final_reason = "unknown_termination"
+                final_details = None
+
+                if optimization_completed_normally:
+                    final_status = "completed"
+                    final_reason = "completed_successfully"
+                else:
+                    # If an exception was caught and we have details
+                    if 'error_details' in locals():
+                         final_status = "error"
+                         final_reason = "error_cli_internal"
+                         final_details = error_details
+                    # else: # Should have been handled by signal handler if terminated by user
+                         # Keep default 'unknown' if we somehow end up here without error/completion/signal
+
+                # Avoid reporting if terminated by signal handler (already reported)
+                # Check a flag or rely on status not being 'unknown'
+                if final_status != "unknown":
+                    report_termination(
+                        session_id=session_id,
+                        status_update=final_status,
+                        reason=final_reason,
+                        details=final_details,
+                        auth_headers=auth_headers
+                    )
+
+            # Ensure proper exit code if an error occurred
+            if not optimization_completed_normally and 'exit_code' in locals() and exit_code != 0:
+                 sys.exit(exit_code)
+            elif not optimization_completed_normally:
+                 # Generic error exit if no specific code was set but try block failed
+                 sys.exit(1)
+            else:
+                 # Normal exit
+                 sys.exit(0)
