@@ -1,4 +1,4 @@
-# Example: Optimizing a Kaggle Classification Model (Spaceship Titanic)
+# Example: Solving a Kaggle Competition (Spaceship Titanic)
 
 This example demonstrates using Weco to optimize a Python script designed for the [Spaceship Titanic Kaggle competition](https://www.kaggle.com/competitions/spaceship-titanic/overview). The goal is to improve the model's `accuracy` metric by directly optimizing the evaluate.py
 
