@@ -19,7 +19,7 @@ weco run --source evaluate.py \
          --eval-command "python evaluate.py --data-dir ./data" \
          --metric accuracy \
          --maximize true \
-         --steps 10 \
+         --steps 20 \
          --model gemini-2.5-pro-exp-03-25 \
          --additional-instructions "Improve feature engineering, model choice and hyper-parameters."
          --log-dir .runs/spaceship-titanic
