@@ -102,6 +102,7 @@ weco run --source optimize.py \
 
 ### Weco Dashboard
 To associate your optimization runs with your Weco account and view them on the Weco dashboard, you can log in. `weco` uses a device authentication flow
+![image (16)](https://github.com/user-attachments/assets/8a0a285b-4894-46fa-b6a2-4990017ca0c6)
 
 ---
 
