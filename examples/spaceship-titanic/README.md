@@ -5,7 +5,9 @@ This example demonstrates using Weco to optimize a Python script designed for th
 ## Setup
 
 1.  Ensure you are in the `examples/spaceship-titanic` directory.
-2.  **Install Dependencies:** Install the required Python packages:
+2.  `pip install weco`
+3.  Set up LLM API Key, `export OPENAI_API_KEY="your_key_here"`
+4.  **Install Dependencies:** Install the required Python packages:
     ```bash
     pip install -r requirements-test.txt
     ```
@@ -20,7 +22,7 @@ weco run --source evaluate.py \
          --metric accuracy \
          --maximize true \
          --steps 20 \
-         --model gemini-2.5-pro-exp-03-25 \
+         --model o4-mini \
          --additional-instructions "Improve feature engineering, model choice and hyper-parameters."
          --log-dir .runs/spaceship-titanic
 ```
