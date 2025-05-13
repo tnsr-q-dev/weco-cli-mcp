@@ -63,14 +63,14 @@ class HeartbeatSender(threading.Thread):
         self.stop_event = stop_event
 
     def run(self):
-        print("[dim]Heartbeat thread started.[/dim]", file=sys.stderr)
+        console.print("[dim]Heartbeat thread started.[/dim]", stderr=True)
         while not self.stop_event.is_set():
             if not send_heartbeat(self.session_id, self.auth_headers):
                 # Log failure, but continue trying (backend timeout is the fallback)
                 pass # Error is printed within send_heartbeat
             # Wait for the interval OR until the stop event is set
             self.stop_event.wait(self.interval)
-        print("[dim]Heartbeat thread stopped.[/dim]", file=sys.stderr)
+        console.print("[dim]Heartbeat thread stopped.[/dim]", stderr=True)
 
 # --- Signal Handling ---
 def signal_handler(signum, frame):
