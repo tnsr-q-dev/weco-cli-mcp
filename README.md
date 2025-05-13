@@ -7,8 +7,6 @@
 [![PyPI version](https://badge.fury.io/py/weco.svg)](https://badge.fury.io/py/weco)
 [![AIDE](https://img.shields.io/badge/AI--Driven_Exploration-arXiv-orange?style=flat-square&logo=arxiv)](https://arxiv.org/abs/2502.13138)
 
-<code>pip install weco</code>
-
 </div>
 
 ---
@@ -17,9 +15,9 @@ Weco systematically optimizes your code, guided directly by your evaluation metr
 
 Example applications include:
 
-- **GPU Kernel Optimization**: Reimplement PyTorch functions using CUDA or Triton optimizing for `latency`, `throughput`, or `memory_bandwidth`.
-- **Model Development**: Tune feature transformations or architectures, optimizing for `validation_accuracy`, `AUC`, or `Sharpe Ratio`.
-- **Prompt Engineering**: Refine prompts for LLMs, optimizing for `win_rate`, `relevance`, or `format_adherence`
+- **GPU Kernel Optimization**: Reimplement PyTorch functions using [CUDA](/examples/cuda/README.md) or [Triton](/examples/triton/README.md), optimizing for `latency`, `throughput`, or `memory_bandwidth`.
+- **Model Development**: Tune feature transformations, architectures or [the whole training pipeline](/examples/spaceship-titanic/README.md), optimizing for `validation_accuracy`, `AUC`, or `Sharpe Ratio`.
+- **Prompt Engineering**: Refine prompts for LLMs (e.g., for [math problems](/examples/prompt/README.md)), optimizing for `win_rate`, `relevance`, or `format_adherence`
 
 ![image](assets/example-optimization.gif)
 
@@ -49,29 +47,9 @@ The `weco` CLI leverages a tree search approach guided by Large Language Models 
     - **Anthropic:** `export ANTHROPIC_API_KEY="your_key_here"`
     - **Google DeepMind:** `export GEMINI_API_KEY="your_key_here"` (Google AI Studio has a free API usage quota. Create a key [here](https://aistudio.google.com/apikey) to use `weco` for free.)
 
-    The optimization process will fail if the necessary keys for the chosen model are not found in your environment.
-
-3.  **Log In to Weco (Optional):**
-
-    To associate your optimization runs with your Weco account and view them on the Weco dashboard, you can log in. `weco` uses a device authentication flow:
-
-    - When you first run `weco run`, you'll be prompted if you want to log in or proceed anonymously.
-    - If you choose to log in (by pressing `l`), you'll be shown a URL and `weco` will attempt to open it in your default web browser.
-    - You then authenticate in the browser. Once authenticated, the CLI will detect this and complete the login.
-    - This saves a Weco-specific API key locally (typically at `~/.config/weco/credentials.json`).
-
-    If you choose to skip login (by pressing Enter or `s`), `weco` will still function using the environment variable LLM keys, but the run history will not be linked to a Weco account.
-
-    To log out and remove your saved Weco API key, use the `weco logout` command.
-
 ---
 
-## Usage
-
-The CLI has two main commands:
-
-- `weco run`: Initiates the code optimization process.
-- `weco logout`: Logs you out of your Weco account.
+## Get Started
 
 <div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
   <strong>⚠️ Warning: Code Modification</strong><br>
@@ -80,15 +58,11 @@ The CLI has two main commands:
 
 ---
 
-### `weco run` Command
-
-This command starts the optimization process.
-
 **Example: Optimizing Simple PyTorch Operations**
 
 This basic example shows how to optimize a simple PyTorch function for speedup.
 
-For more advanced examples, including [Triton](/examples/triton/README.md), [CUDA kernel optimization](/examples/cuda/README.md)**, and **[ML model optimization](/examples/spaceship-titanic/README.md)**, please see the `README.md` files within the corresponding subdirectories under the [`examples/`](./examples/) folder.
+For more advanced examples, including [Triton](/examples/triton/README.md), [CUDA kernel optimization](/examples/cuda/README.md), [ML model optimization](/examples/spaceship-titanic/README.md), and [prompt engineering for math problems](https://github.com/WecoAI/weco-cli/tree/main/examples/prompt), please see the `README.md` files within the corresponding subdirectories under the [`examples/`](./examples/) folder.
 
 ```bash
 # Navigate to the example directory
@@ -123,17 +97,12 @@ weco run --source optimize.py \
 | `--model`                   | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.5-sonnet`). Recommended models to try include `o3-mini`, `claude-3-haiku`, and `gemini-2.5-pro-exp-03-25`. | Yes      |
 | `--additional-instructions` | (Optional) Natural language description of specific instructions OR path to a file containing detailed instructions to guide the LLM.                                     | No       |
 | `--log-dir`                 | (Optional) Path to the directory to log intermediate steps and final optimization result. Defaults to `.runs/`.                                                           | No       |
-| `--preserve-source`         | (Optional) If set, do not overwrite the original `--source` file. Modifications and the best solution will still be saved in the `--log-dir`.                             | No       |
 
 ---
 
-### `weco logout` Command
-
-This command logs you out by removing the locally stored Weco API key.
-
-```bash
-weco logout
-```
+### Weco Dashboard
+To associate your optimization runs with your Weco account and view them on the Weco dashboard, you can log in. `weco` uses a device authentication flow
+![image (16)](https://github.com/user-attachments/assets/8a0a285b-4894-46fa-b6a2-4990017ca0c6)
 
 ---
 
