@@ -89,7 +89,7 @@ def evaluate_feedback_then_suggest_next_solution(
         handle_api_error(e, Console())  # Use default console if none passed
         raise  # Re-raise the exception
     except requests.exceptions.RequestException as e:
-        print(f"[bold red]Network Error during suggest: {e}[/]")  # Use print as console might not be available
+        print(f"Network Error during suggest: {e}")  # Use print as console might not be available
         raise  # Re-raise the exception
 
 
@@ -110,7 +110,7 @@ def get_optimization_session_status(
         handle_api_error(e, Console())  # Use default console
         raise  # Re-raise
     except requests.exceptions.RequestException as e:
-        print(f"[bold red]Network Error getting status: {e}[/]")
+        print(f"Network Error getting status: {e}")
         raise  # Re-raise
 
 
@@ -127,16 +127,14 @@ def send_heartbeat(
     except requests.exceptions.HTTPError as e:
         # Log non-critical errors like 409 Conflict (session not running)
         if e.response.status_code == 409:
-            print(f"[yellow]Heartbeat ignored: Session {session_id} is not running.[/yellow]", file=sys.stderr)
+            print(f"Heartbeat ignored: Session {session_id} is not running.", file=sys.stderr)
         else:
-            print(
-                f"[yellow]Heartbeat failed for session {session_id}: HTTP {e.response.status_code}[/yellow]", file=sys.stderr
-            )
+            print(f"Heartbeat failed for session {session_id}: HTTP {e.response.status_code}", file=sys.stderr)
         # Don't exit, just report failure
         return False
     except requests.exceptions.RequestException as e:
         # Network errors are also non-fatal for heartbeats
-        print(f"[yellow]Heartbeat network error for session {session_id}: {e}[/yellow]", file=sys.stderr)
+        print(f"Heartbeat network error for session {session_id}: {e}", file=sys.stderr)
         return False
 
 
@@ -157,12 +155,8 @@ def report_termination(
             timeout=timeout,
         )
         response.raise_for_status()
-        print(f"[dim]Termination reported to backend (Status: {status_update}, Reason: {reason}).[/dim]", file=sys.stderr)
         return True
     except requests.exceptions.RequestException as e:
         # Log failure, but don't prevent CLI exit
-        print(
-            f"[bold yellow]Warning: Failed to report termination to backend for session {session_id}: {e}[/bold yellow]",
-            file=sys.stderr,
-        )
+        print(f"Warning: Failed to report termination to backend for session {session_id}: {e}", file=sys.stderr)
         return False

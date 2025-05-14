@@ -64,8 +64,6 @@ class HeartbeatSender(threading.Thread):
         self.stop_event = stop_event
 
     def run(self):
-        # Using standard print for thread lifecycle messages for robustness
-        print(f"[HeartbeatSender] Thread for session {self.session_id} started.", file=sys.stderr)
         try:
             while not self.stop_event.is_set():
                 if not send_heartbeat(self.session_id, self.auth_headers):
@@ -85,9 +83,6 @@ class HeartbeatSender(threading.Thread):
             )
             traceback.print_exc(file=sys.stderr)
             # The loop will break due to the exception, and thread will terminate via finally.
-        finally:
-            # Ensure this message is printed when the thread is actually stopping
-            print(f"[HeartbeatSender] Thread for session {self.session_id} stopping.", file=sys.stderr)
 
 
 # --- Signal Handling ---
@@ -689,7 +684,6 @@ def main() -> None:
             # Stop heartbeat thread
             stop_heartbeat_event.set()
             if heartbeat_thread and heartbeat_thread.is_alive():
-                print("[dim]Waiting for heartbeat thread to finish...[/dim]", file=sys.stderr)
                 heartbeat_thread.join(timeout=2)  # Give it a moment to stop
 
             # Report final status if a session was started
