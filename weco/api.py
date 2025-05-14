@@ -9,9 +9,9 @@ from rich.console import Console
 def handle_api_error(e: requests.exceptions.HTTPError, console: rich.console.Console) -> None:
     """Extract and display error messages from API responses in a structured format."""
     try:
-        detail = e.response.json()['detail']
-    except (ValueError, KeyError): # Handle cases where response is not JSON or detail key is missing
-         detail = f"HTTP {e.response.status_code} Error: {e.response.text}"
+        detail = e.response.json()["detail"]
+    except (ValueError, KeyError):  # Handle cases where response is not JSON or detail key is missing
+        detail = f"HTTP {e.response.status_code} Error: {e.response.text}"
     console.print(f"[bold red]{detail}[/]")
     # Avoid exiting here, let the caller decide if the error is fatal
     # sys.exit(1)
@@ -56,7 +56,7 @@ def start_optimization_session(
             return response.json()
         except requests.exceptions.HTTPError as e:
             handle_api_error(e, console)
-            sys.exit(1) # Exit if starting session fails
+            sys.exit(1)  # Exit if starting session fails
         except requests.exceptions.RequestException as e:
             console.print(f"[bold red]Network Error starting session: {e}[/]")
             sys.exit(1)
@@ -86,11 +86,11 @@ def evaluate_feedback_then_suggest_next_solution(
         return response.json()
     except requests.exceptions.HTTPError as e:
         # Allow caller to handle suggest errors, maybe retry or terminate
-        handle_api_error(e, Console()) # Use default console if none passed
-        raise # Re-raise the exception
+        handle_api_error(e, Console())  # Use default console if none passed
+        raise  # Re-raise the exception
     except requests.exceptions.RequestException as e:
-        print(f"[bold red]Network Error during suggest: {e}[/]") # Use print as console might not be available
-        raise # Re-raise the exception
+        print(f"[bold red]Network Error during suggest: {e}[/]")  # Use print as console might not be available
+        raise  # Re-raise the exception
 
 
 def get_optimization_session_status(
@@ -107,33 +107,31 @@ def get_optimization_session_status(
         response.raise_for_status()
         return response.json()
     except requests.exceptions.HTTPError as e:
-        handle_api_error(e, Console()) # Use default console
-        raise # Re-raise
+        handle_api_error(e, Console())  # Use default console
+        raise  # Re-raise
     except requests.exceptions.RequestException as e:
         print(f"[bold red]Network Error getting status: {e}[/]")
-        raise # Re-raise
+        raise  # Re-raise
 
 
 def send_heartbeat(
     session_id: str,
     auth_headers: dict = {},
-    timeout: int = 10 # Shorter timeout for non-critical heartbeat
+    timeout: int = 10,  # Shorter timeout for non-critical heartbeat
 ) -> bool:
     """Send a heartbeat signal to the backend."""
     try:
-        response = requests.put(
-            f"{__base_url__}/sessions/{session_id}/heartbeat",
-            headers=auth_headers,
-            timeout=timeout,
-        )
-        response.raise_for_status() # Raises HTTPError for bad responses (4xx or 5xx)
+        response = requests.put(f"{__base_url__}/sessions/{session_id}/heartbeat", headers=auth_headers, timeout=timeout)
+        response.raise_for_status()  # Raises HTTPError for bad responses (4xx or 5xx)
         return True
     except requests.exceptions.HTTPError as e:
         # Log non-critical errors like 409 Conflict (session not running)
         if e.response.status_code == 409:
-             print(f"[yellow]Heartbeat ignored: Session {session_id} is not running.[/yellow]", file=sys.stderr)
+            print(f"[yellow]Heartbeat ignored: Session {session_id} is not running.[/yellow]", file=sys.stderr)
         else:
-             print(f"[yellow]Heartbeat failed for session {session_id}: HTTP {e.response.status_code}[/yellow]", file=sys.stderr)
+            print(
+                f"[yellow]Heartbeat failed for session {session_id}: HTTP {e.response.status_code}[/yellow]", file=sys.stderr
+            )
         # Don't exit, just report failure
         return False
     except requests.exceptions.RequestException as e:
@@ -148,17 +146,13 @@ def report_termination(
     reason: str,
     details: Optional[str] = None,
     auth_headers: dict = {},
-    timeout: int = 30 # Reasonably longer timeout for important termination message
+    timeout: int = 30,  # Reasonably longer timeout for important termination message
 ) -> bool:
     """Report the termination reason to the backend."""
     try:
         response = requests.post(
             f"{__base_url__}/sessions/{session_id}/terminate",
-            json={
-                "status_update": status_update,
-                "termination_reason": reason,
-                "termination_details": details,
-            },
+            json={"status_update": status_update, "termination_reason": reason, "termination_details": details},
             headers=auth_headers,
             timeout=timeout,
         )
@@ -167,5 +161,8 @@ def report_termination(
         return True
     except requests.exceptions.RequestException as e:
         # Log failure, but don't prevent CLI exit
-        print(f"[bold yellow]Warning: Failed to report termination to backend for session {session_id}: {e}[/bold yellow]", file=sys.stderr)
+        print(
+            f"[bold yellow]Warning: Failed to report termination to backend for session {session_id}: {e}[/bold yellow]",
+            file=sys.stderr,
+        )
         return False

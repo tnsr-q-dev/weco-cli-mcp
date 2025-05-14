@@ -253,7 +253,7 @@ class MetricTreePanel:
         # Make sure the metric tree is built before calling build_rich_tree
         return Panel(
             self._build_rich_tree(),
-            title="[bold]🔎 Exploring Solutions..." if not is_done else "[bold]🔎 Optimization Complete!",
+            title=("[bold]🔎 Exploring Solutions..." if not is_done else "[bold]🔎 Optimization Complete!"),
             border_style="green",
             expand=True,
             padding=(0, 1),
