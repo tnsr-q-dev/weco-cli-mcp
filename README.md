@@ -1,6 +1,6 @@
 <div align="center">
 
-# Weco: The AI Code Optimizer
+# Weco: The Platform for Self-Improving Code
 
 [![Python](https://img.shields.io/badge/Python-3.8.0+-blue)](https://www.python.org)
 [![docs](https://img.shields.io/website?url=https://docs.weco.ai/&label=docs)](https://docs.weco.ai/)
