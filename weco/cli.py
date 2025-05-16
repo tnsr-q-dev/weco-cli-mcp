@@ -437,8 +437,8 @@ def main() -> None:
                     transition_delay=0.1,
                 )
 
-                # Send initial heartbeat immediately after starting
-                send_heartbeat(session_id, auth_headers)
+                # # Send initial heartbeat immediately after starting
+                # send_heartbeat(session_id, auth_headers)
 
                 # Run evaluation on the initial solution
                 term_out = run_evaluation(eval_command=args.eval_command)
@@ -460,23 +460,14 @@ def main() -> None:
                     )
 
                     # Send feedback and get next suggestion
-                    try:
-                        eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
-                            session_id=session_id,
-                            execution_output=term_out,
-                            additional_instructions=current_additional_instructions,  # Pass current instructions
-                            api_keys=llm_api_keys,  # Pass client LLM keys
-                            auth_headers=auth_headers,  # Pass Weco key if logged in
-                            timeout=timeout,
-                        )
-                    except (requests.exceptions.HTTPError, requests.exceptions.RequestException) as suggest_error:
-                        # If suggest fails, we consider it a CLI error and break the loop
-                        console.print(
-                            f"\n[bold red]Error communicating with API during step {step}. Stopping optimization.[/]"
-                        )
-                        # Error details should have been printed by handle_api_error or the exception handler in evaluate_feedback_then_suggest_next_solution
-                        # Prepare to report error in finally block
-                        raise RuntimeError(f"API error during suggest at step {step}") from suggest_error
+                    eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
+                        session_id=session_id,
+                        execution_output=term_out,
+                        additional_instructions=current_additional_instructions,  # Pass current instructions
+                        api_keys=llm_api_keys,  # Pass client LLM keys
+                        auth_headers=auth_headers,  # Pass Weco key if logged in
+                        timeout=timeout,
+                    )
 
                     # Save next solution (.runs/<session-id>/step_<step>.<extension>)
                     write_to_path(
@@ -569,20 +560,14 @@ def main() -> None:
                 )
 
                 # Final evaluation report
-                try:
-                    eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
-                        session_id=session_id,
-                        execution_output=term_out,
-                        additional_instructions=current_additional_instructions,
-                        api_keys=llm_api_keys,
-                        timeout=timeout,
-                        auth_headers=auth_headers,
-                    )
-                except (requests.exceptions.HTTPError, requests.exceptions.RequestException) as suggest_error:
-                    console.print(
-                        "\n[bold red]Error communicating with API during final evaluation report. Results might be incomplete.[/]"
-                    )
-                    raise RuntimeError("API error during final suggest call") from suggest_error
+                eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
+                    session_id=session_id,
+                    execution_output=term_out,
+                    additional_instructions=current_additional_instructions,
+                    api_keys=llm_api_keys,
+                    timeout=timeout,
+                    auth_headers=auth_headers,
+                )
 
                 # Update the progress bar
                 summary_panel.set_step(step=steps)
