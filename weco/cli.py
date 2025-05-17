@@ -42,6 +42,7 @@ from .utils import (
     run_evaluation,
     smooth_update,
     format_number,
+    check_for_cli_updates,
 )
 
 install(show_locals=True)
@@ -230,6 +231,12 @@ def main() -> None:
     # Setup signal handlers
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
+
+    # --- Perform Update Check ---
+    # Import __pkg_version__ here to avoid circular import issues if it's also used in modules imported by cli.py
+    from . import __pkg_version__
+
+    check_for_cli_updates(__pkg_version__)  # Call the imported function
 
     # --- Argument Parsing ---
     parser = argparse.ArgumentParser(
