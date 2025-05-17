@@ -130,7 +130,7 @@ def check_for_cli_updates(current_version_str: str):
             reset_color = "\033[0m"
             message = f"WARNING: New weco version ({latest_version_str}) available (you have {current_version_str}). Run: pip install --upgrade weco"
             print(f"{yellow_start}{message}{reset_color}")
-            time.sleep(1)  # Wait for 1 second
+            time.sleep(2)  # Wait for 2 second
 
     except requests.exceptions.RequestException:
         # Silently fail on network errors, etc. Don't disrupt user.
