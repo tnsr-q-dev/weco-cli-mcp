@@ -288,6 +288,7 @@ def main() -> None:
 
         session_id = None  # Initialize session_id
         optimization_completed_normally = False  # Flag for finally block
+        user_stop_requested_flag = False # New flag for user-initiated stop
         # --- Check Authentication ---
         weco_api_key = load_weco_api_key()
         llm_api_keys = read_api_keys_from_env()  # Read keys from client environment
@@ -466,6 +467,26 @@ def main() -> None:
                         additional_instructions=args.additional_instructions
                     )
 
+                    # Get current session status BEFORE proceeding with suggestion/evaluation
+                    # This is where the CLI checks if it should stop
+                    if session_id: # Ensure session_id is available
+                        try:
+                            current_status_response = get_optimization_session_status(
+                                session_id=session_id,
+                                include_history=False, # Don't need full history here
+                                timeout=30, # Shorter timeout for status check
+                                auth_headers=auth_headers
+                            )
+                            current_run_status = current_status_response.get("status")
+                            if current_run_status == "stopping":
+                                console.print("\n[bold yellow]Stop request received. Terminating run gracefully...[/]")
+                                user_stop_requested_flag = True
+                                break # Exit the optimization loop
+                        except requests.exceptions.RequestException as e:
+                            console.print(f"\n[bold red]Warning: Could not check session status: {e}. Continuing optimization...[/]")
+                        except Exception as e: # Catch any other error during status check
+                            console.print(f"\n[bold red]Warning: Error checking session status: {e}. Continuing optimization...[/]")
+
                     # Send feedback and get next suggestion
                     eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
                         session_id=session_id,
@@ -561,94 +582,96 @@ def main() -> None:
                         transition_delay=0.1,  # Slightly longer delay for evaluation results
                     )
 
-                # Re-read instructions from the original source (file path or string) BEFORE each suggest call
-                current_additional_instructions = read_additional_instructions(
-                    additional_instructions=args.additional_instructions
-                )
-
-                # Final evaluation report
-                eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
-                    session_id=session_id,
-                    execution_output=term_out,
-                    additional_instructions=current_additional_instructions,
-                    api_keys=llm_api_keys,
-                    timeout=timeout,
-                    auth_headers=auth_headers,
-                )
-
-                # Update the progress bar
-                summary_panel.set_step(step=steps)
-                # Update the token counts
-                summary_panel.update_token_counts(usage=eval_and_next_solution_response["usage"])
-                # No need to update the plan panel since we have finished the optimization
-                # Get the optimization session status for
-                # the best solution, its score, and the history to plot the tree
-                status_response = get_optimization_session_status(
-                    session_id=session_id, include_history=True, timeout=timeout, auth_headers=auth_headers
-                )
-                # Build the metric tree
-                tree_panel.build_metric_tree(nodes=status_response["history"])
-                # No need to set any solution to unevaluated since we have finished the optimization
-                # and all solutions have been evaluated
-                # No neeed to update the current solution panel since we have finished the optimization
-                # We only need to update the best solution panel
-                # Figure out if we have a best solution so far
-                if status_response["best_result"] is not None:
-                    best_solution_node = Node(
-                        id=status_response["best_result"]["solution_id"],
-                        parent_id=status_response["best_result"]["parent_id"],
-                        code=status_response["best_result"]["code"],
-                        metric=status_response["best_result"]["metric_value"],
-                        is_buggy=status_response["best_result"]["is_buggy"],
-                    )
-                else:
-                    best_solution_node = None
-                solution_panels.update(current_node=None, best_node=best_solution_node)
-                _, best_solution_panel = solution_panels.get_display(current_step=steps)
-
-                # Update the end optimization layout
-                final_message = (
-                    f"{summary_panel.metric_name.capitalize()} {'maximized' if summary_panel.maximize else 'minimized'}! Best solution {summary_panel.metric_name.lower()} = [green]{status_response['best_result']['metric_value']}[/] 🏆"
-                    if best_solution_node is not None and best_solution_node.metric is not None
-                    else "[red] No valid solution found.[/]"
-                )
-                end_optimization_layout["summary"].update(summary_panel.get_display(final_message=final_message))
-                end_optimization_layout["tree"].update(tree_panel.get_display(is_done=True))
-                end_optimization_layout["best_solution"].update(best_solution_panel)
-
-                # Save optimization results
-                # If the best solution does not exist or is has not been measured at the end of the optimization
-                # save the original solution as the best solution
-                if best_solution_node is not None:
-                    best_solution_code = best_solution_node.code
-                    best_solution_score = best_solution_node.metric
-                else:
-                    best_solution_code = None
-                    best_solution_score = None
-
-                if best_solution_code is None or best_solution_score is None:
-                    best_solution_content = f"# Weco could not find a better solution\n\n{read_from_path(fp=runs_dir / f'step_0{source_fp.suffix}', is_json=False)}"
-                else:
-                    # Format score for the comment
-                    best_score_str = (
-                        format_number(best_solution_score)
-                        if best_solution_score is not None and isinstance(best_solution_score, (int, float))
-                        else "N/A"
-                    )
-                    best_solution_content = (
-                        f"# Best solution from Weco with a score of {best_score_str}\n\n{best_solution_code}"
+                # If loop finished without user_stop_requested_flag
+                if not user_stop_requested_flag:
+                    # Re-read instructions from the original source (file path or string) BEFORE each suggest call
+                    current_additional_instructions = read_additional_instructions(
+                        additional_instructions=args.additional_instructions
                     )
 
-                # Save best solution to .runs/<session-id>/best.<extension>
-                write_to_path(fp=runs_dir / f"best{source_fp.suffix}", content=best_solution_content)
+                    # Final evaluation report
+                    eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
+                        session_id=session_id,
+                        execution_output=term_out,
+                        additional_instructions=current_additional_instructions,
+                        api_keys=llm_api_keys,
+                        timeout=timeout,
+                        auth_headers=auth_headers,
+                    )
 
-                # write the best solution to the source file
-                write_to_path(fp=source_fp, content=best_solution_content)
+                    # Update the progress bar
+                    summary_panel.set_step(step=steps)
+                    # Update the token counts
+                    summary_panel.update_token_counts(usage=eval_and_next_solution_response["usage"])
+                    # No need to update the plan panel since we have finished the optimization
+                    # Get the optimization session status for
+                    # the best solution, its score, and the history to plot the tree
+                    status_response = get_optimization_session_status(
+                        session_id=session_id, include_history=True, timeout=timeout, auth_headers=auth_headers
+                    )
+                    # Build the metric tree
+                    tree_panel.build_metric_tree(nodes=status_response["history"])
+                    # No need to set any solution to unevaluated since we have finished the optimization
+                    # and all solutions have been evaluated
+                    # No neeed to update the current solution panel since we have finished the optimization
+                    # We only need to update the best solution panel
+                    # Figure out if we have a best solution so far
+                    if status_response["best_result"] is not None:
+                        best_solution_node = Node(
+                            id=status_response["best_result"]["solution_id"],
+                            parent_id=status_response["best_result"]["parent_id"],
+                            code=status_response["best_result"]["code"],
+                            metric=status_response["best_result"]["metric_value"],
+                            is_buggy=status_response["best_result"]["is_buggy"],
+                        )
+                    else:
+                        best_solution_node = None
+                    solution_panels.update(current_node=None, best_node=best_solution_node)
+                    _, best_solution_panel = solution_panels.get_display(current_step=steps)
 
-                # Mark as completed normally for the finally block
-                optimization_completed_normally = True
+                    # Update the end optimization layout
+                    final_message = (
+                        f"{summary_panel.metric_name.capitalize()} {'maximized' if summary_panel.maximize else 'minimized'}! Best solution {summary_panel.metric_name.lower()} = [green]{status_response['best_result']['metric_value']}[/] 🏆"
+                        if best_solution_node is not None and best_solution_node.metric is not None
+                        else "[red] No valid solution found.[/]"
+                    )
+                    end_optimization_layout["summary"].update(summary_panel.get_display(final_message=final_message))
+                    end_optimization_layout["tree"].update(tree_panel.get_display(is_done=True))
+                    end_optimization_layout["best_solution"].update(best_solution_panel)
 
-            console.print(end_optimization_layout)
+                    # Save optimization results
+                    # If the best solution does not exist or is has not been measured at the end of the optimization
+                    # save the original solution as the best solution
+                    if best_solution_node is not None:
+                        best_solution_code = best_solution_node.code
+                        best_solution_score = best_solution_node.metric
+                    else:
+                        best_solution_code = None
+                        best_solution_score = None
+
+                    if best_solution_code is None or best_solution_score is None:
+                        best_solution_content = f"# Weco could not find a better solution\n\n{read_from_path(fp=runs_dir / f'step_0{source_fp.suffix}', is_json=False)}"
+                    else:
+                        # Format score for the comment
+                        best_score_str = (
+                            format_number(best_solution_score)
+                            if best_solution_score is not None and isinstance(best_solution_score, (int, float))
+                            else "N/A"
+                        )
+                        best_solution_content = (
+                            f"# Best solution from Weco with a score of {best_score_str}\n\n{best_solution_code}"
+                        )
+
+                    # Save best solution to .runs/<session-id>/best.<extension>
+                    write_to_path(fp=runs_dir / f"best{source_fp.suffix}", content=best_solution_content)
+
+                    # write the best solution to the source file
+                    write_to_path(fp=source_fp, content=best_solution_content)
+
+                    # Mark as completed normally for the finally block
+                    optimization_completed_normally = True # Only set if loop completes all steps
+
+                    console.print(end_optimization_layout) # Moved inside the if
 
         except Exception as e:
             # Catch errors during the main optimization loop or setup
@@ -680,39 +703,51 @@ def main() -> None:
 
             # Report final status if a session was started
             if session_id:
-                final_status = "unknown"
-                final_reason = "unknown_termination"
+                final_status_update = "unknown"
+                final_reason_code = "unknown_termination"
                 final_details = None
 
-                if optimization_completed_normally:
-                    final_status = "completed"
-                    final_reason = "completed_successfully"
-                else:
-                    # If an exception was caught and we have details
+                if optimization_completed_normally: # All steps completed
+                    final_status_update = "completed"
+                    final_reason_code = "completed_successfully"
+                elif user_stop_requested_flag: # Stopped by user request
+                    final_status_update = "terminated"
+                    final_reason_code = "user_requested_stop"
+                    final_details = "Run stopped by user request via dashboard."
+                else: # Any other non-normal termination (e.g., CLI error)
+                    final_status_update = "error"
+                    final_reason_code = "error_cli_internal"
+                    # Use error_details from the existing except block if available
                     if "error_details" in locals():
-                        final_status = "error"
-                        final_reason = "error_cli_internal"
-                        final_details = error_details
-                    # else: # Should have been handled by signal handler if terminated by user
-                    # Keep default 'unknown' if we somehow end up here without error/completion/signal
+                        final_details = locals()["error_details"]
+                    elif "e" in locals() and isinstance(locals()["e"], Exception): # Fallback if e is somehow there
+                        final_details = traceback.format_exc()
+                    else:
+                        final_details = "CLI terminated unexpectedly without a specific exception captured."
+                
+                # The signal_handler will call report_termination with its own reasons.
+                # This `finally` block's report_termination is for loop completion,
+                # user_requested_stop, or internal CLI errors not caught by signals.
+                # We assume signal_handler calls sys.exit, so this block might not fully
+                # execute if a signal terminates the process abruptly *before* this finally.
+                # However, for user_requested_stop detected by the loop, this will run.
 
-                # Avoid reporting if terminated by signal handler (already reported)
-                # Check a flag or rely on status not being 'unknown'
-                if final_status != "unknown":
-                    report_termination(
+                if final_status_update != "unknown":
+                     report_termination(
                         session_id=session_id,
-                        status_update=final_status,
-                        reason=final_reason,
+                        status_update=final_status_update,
+                        reason=final_reason_code,
                         details=final_details,
-                        auth_headers=auth_headers,
+                        auth_headers=current_auth_headers_for_heartbeat, # Use this as per plan
                     )
 
-            # Ensure proper exit code if an error occurred
-            if not optimization_completed_normally and "exit_code" in locals() and exit_code != 0:
-                sys.exit(exit_code)
-            elif not optimization_completed_normally:
-                # Generic error exit if no specific code was set but try block failed
-                sys.exit(1)
-            else:
-                # Normal exit
+            # Exit code logic
+            if optimization_completed_normally:
                 sys.exit(0)
+            elif user_stop_requested_flag:
+                console.print("[yellow]Run terminated by user request.[/]")
+                sys.exit(0) # Graceful exit for user stop
+            else:
+                # If an error occurred and was caught by the `except Exception as e` block
+                # exit_code might have been set by the existing except block.
+                sys.exit(locals().get("exit_code", 1))
