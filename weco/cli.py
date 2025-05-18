@@ -288,7 +288,7 @@ def main() -> None:
 
         session_id = None  # Initialize session_id
         optimization_completed_normally = False  # Flag for finally block
-        user_stop_requested_flag = False # New flag for user-initiated stop
+        user_stop_requested_flag = False  # New flag for user-initiated stop
         # --- Check Authentication ---
         weco_api_key = load_weco_api_key()
         llm_api_keys = read_api_keys_from_env()  # Read keys from client environment
@@ -469,23 +469,27 @@ def main() -> None:
 
                     # Get current session status BEFORE proceeding with suggestion/evaluation
                     # This is where the CLI checks if it should stop
-                    if session_id: # Ensure session_id is available
+                    if session_id:  # Ensure session_id is available
                         try:
                             current_status_response = get_optimization_session_status(
                                 session_id=session_id,
-                                include_history=False, # Don't need full history here
-                                timeout=30, # Shorter timeout for status check
-                                auth_headers=auth_headers
+                                include_history=False,  # Don't need full history here
+                                timeout=30,  # Shorter timeout for status check
+                                auth_headers=auth_headers,
                             )
                             current_run_status = current_status_response.get("status")
                             if current_run_status == "stopping":
                                 console.print("\n[bold yellow]Stop request received. Terminating run gracefully...[/]")
                                 user_stop_requested_flag = True
-                                break # Exit the optimization loop
+                                break  # Exit the optimization loop
                         except requests.exceptions.RequestException as e:
-                            console.print(f"\n[bold red]Warning: Could not check session status: {e}. Continuing optimization...[/]")
-                        except Exception as e: # Catch any other error during status check
-                            console.print(f"\n[bold red]Warning: Error checking session status: {e}. Continuing optimization...[/]")
+                            console.print(
+                                f"\n[bold red]Warning: Could not check session status: {e}. Continuing optimization...[/]"
+                            )
+                        except Exception as e:  # Catch any other error during status check
+                            console.print(
+                                f"\n[bold red]Warning: Error checking session status: {e}. Continuing optimization...[/]"
+                            )
 
                     # Send feedback and get next suggestion
                     eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
@@ -669,9 +673,9 @@ def main() -> None:
                     write_to_path(fp=source_fp, content=best_solution_content)
 
                     # Mark as completed normally for the finally block
-                    optimization_completed_normally = True # Only set if loop completes all steps
+                    optimization_completed_normally = True  # Only set if loop completes all steps
 
-                    console.print(end_optimization_layout) # Moved inside the if
+                    console.print(end_optimization_layout)  # Moved inside the if
 
         except Exception as e:
             # Catch errors during the main optimization loop or setup
@@ -707,24 +711,24 @@ def main() -> None:
                 final_reason_code = "unknown_termination"
                 final_details = None
 
-                if optimization_completed_normally: # All steps completed
+                if optimization_completed_normally:  # All steps completed
                     final_status_update = "completed"
                     final_reason_code = "completed_successfully"
-                elif user_stop_requested_flag: # Stopped by user request
+                elif user_stop_requested_flag:  # Stopped by user request
                     final_status_update = "terminated"
                     final_reason_code = "user_requested_stop"
                     final_details = "Run stopped by user request via dashboard."
-                else: # Any other non-normal termination (e.g., CLI error)
+                else:  # Any other non-normal termination (e.g., CLI error)
                     final_status_update = "error"
                     final_reason_code = "error_cli_internal"
                     # Use error_details from the existing except block if available
                     if "error_details" in locals():
                         final_details = locals()["error_details"]
-                    elif "e" in locals() and isinstance(locals()["e"], Exception): # Fallback if e is somehow there
+                    elif "e" in locals() and isinstance(locals()["e"], Exception):  # Fallback if e is somehow there
                         final_details = traceback.format_exc()
                     else:
                         final_details = "CLI terminated unexpectedly without a specific exception captured."
-                
+
                 # The signal_handler will call report_termination with its own reasons.
                 # This `finally` block's report_termination is for loop completion,
                 # user_requested_stop, or internal CLI errors not caught by signals.
@@ -733,12 +737,12 @@ def main() -> None:
                 # However, for user_requested_stop detected by the loop, this will run.
 
                 if final_status_update != "unknown":
-                     report_termination(
+                    report_termination(
                         session_id=session_id,
                         status_update=final_status_update,
                         reason=final_reason_code,
                         details=final_details,
-                        auth_headers=current_auth_headers_for_heartbeat, # Use this as per plan
+                        auth_headers=current_auth_headers_for_heartbeat,
                     )
 
             # Exit code logic
@@ -746,7 +750,7 @@ def main() -> None:
                 sys.exit(0)
             elif user_stop_requested_flag:
                 console.print("[yellow]Run terminated by user request.[/]")
-                sys.exit(0) # Graceful exit for user stop
+                sys.exit(0)  # Graceful exit for user stop
             else:
                 # If an error occurred and was caught by the `except Exception as e` block
                 # exit_code might have been set by the existing except block.
