@@ -21,7 +21,7 @@ Run the following command to start the optimization process:
 weco run --source optimize.py \
          --eval-command "python evaluate.py --solution-path optimize.py" \
          --metric speedup \
-         --maximize true \
+         --goal maximize \
          --steps 30 \
          --model gemini-2.5-pro-exp-03-25 \
          --additional-instructions guide.md
@@ -32,7 +32,7 @@ weco run --source optimize.py \
 *   `--source optimize.py`: The initial PyTorch self-attention code to be optimized with CUDA.
 *   `--eval-command "python evaluate.py --solution-path optimize.py"`: Runs the evaluation script, which compiles (if necessary) and benchmarks the CUDA-enhanced code in `optimize.py` against a baseline, printing the `speedup`.
 *   `--metric speedup`: The optimization target metric.
-*   `--maximize true`: Weco aims to increase the speedup.
+*   `--goal maximize`: Weco aims to increase the speedup.
 *   `--steps 30`: The number of optimization iterations.
 *   `--model gemini-2.5-pro-exp-03-25`: The LLM used for code generation.
 *   `--additional-instructions guide.md`: Points Weco to a file containing detailed instructions for the LLM on how to write the CUDA kernels, handle compilation (e.g., using `torch.utils.cpp_extension`), manage data types, and ensure correctness.
