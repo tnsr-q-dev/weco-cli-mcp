@@ -7,6 +7,8 @@ from rich.layout import Layout
 from rich.live import Live
 from rich.panel import Panel
 import pathlib
+import requests
+from packaging.version import parse as parse_version
 
 
 # Env/arg helper functions
@@ -109,3 +111,33 @@ def run_evaluation(eval_command: str) -> str:
             output += "\n"
         output += result.stdout
     return output
+
+
+# Update Check Function
+def check_for_cli_updates(current_version_str: str):
+    """Checks PyPI for a newer version of the weco package and notifies the user."""
+    try:
+        pypi_url = "https://pypi.org/pypi/weco/json"
+        response = requests.get(pypi_url, timeout=5)  # Short timeout for non-critical check
+        response.raise_for_status()
+        latest_version_str = response.json()["info"]["version"]
+
+        current_version = parse_version(current_version_str)
+        latest_version = parse_version(latest_version_str)
+
+        if latest_version > current_version:
+            yellow_start = "\033[93m"
+            reset_color = "\033[0m"
+            message = f"WARNING: New weco version ({latest_version_str}) available (you have {current_version_str}). Run: pip install --upgrade weco"
+            print(f"{yellow_start}{message}{reset_color}")
+            time.sleep(2)  # Wait for 2 second
+
+    except requests.exceptions.RequestException:
+        # Silently fail on network errors, etc. Don't disrupt user.
+        pass
+    except (KeyError, ValueError):
+        # Handle cases where the PyPI response format might be unexpected
+        pass
+    except Exception:
+        # Catch any other unexpected error during the check
+        pass
