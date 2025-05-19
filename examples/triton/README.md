@@ -19,7 +19,7 @@ Run the following command to start the optimization process:
 weco run --source optimize.py \
          --eval-command "python evaluate.py --solution-path optimize.py" \
          --metric speedup \
-         --maximize true \
+         --goal maximize \
          --steps 30 \
          --model gemini-2.5-pro-exp-03-25 \
          --additional-instructions "Use triton to optimize the code while ensuring a small max float diff. Maintain the same code format."
@@ -30,7 +30,7 @@ weco run --source optimize.py \
 *   `--source optimize.py`: The PyTorch self-attention implementation to be optimized.
 *   `--eval-command "python evaluate.py --solution-path optimize.py"`: Executes the evaluation script, which benchmarks the `optimize.py` code against a baseline and prints the `speedup`.
 *   `--metric speedup`: The target metric for optimization.
-*   `--maximize true`: Weco should maximize the speedup.
+*   `--goal maximize`: The agent should maximize the speedup.
 *   `--steps 30`: The number of optimization iterations.
 *   `--model gemini-2.5-pro-exp-03-25`: The LLM driving the optimization.
 *   `--additional-instructions "..."`: Provides specific guidance to the LLM, instructing it to use Triton, maintain numerical accuracy ("small max float diff"), and preserve the code structure.

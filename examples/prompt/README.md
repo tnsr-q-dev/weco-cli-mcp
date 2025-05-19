@@ -24,7 +24,7 @@ This example uses `gpt-4o-mini` via the OpenAI API by default. Ensure your `OPEN
    weco --source optimize.py \
         --eval-command "python eval.py" \
         --metric accuracy \
-        --maximize true \
+        --goal maximize \
         --steps 40 \
         --model gemini-2.5-flash-preview-04-17 \
         --addtional-instructions prompt_guide.md

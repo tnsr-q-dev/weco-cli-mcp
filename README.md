@@ -75,9 +75,8 @@ pip install torch
 weco run --source optimize.py \
      --eval-command "python evaluate.py --solution-path optimize.py --device cpu" \
      --metric speedup \
-     --maximize true \
+     --goal maximize \
      --steps 15 \
-     --model gemini-2.5-pro-exp-03-25 \
      --additional-instructions "Fuse operations in the forward method while ensuring the max float deviation remains small. Maintain the same format of the code."
 ```
 
@@ -85,18 +84,27 @@ weco run --source optimize.py \
 
 ---
 
-**Arguments for `weco run`:**
+### Arguments for `weco run`
 
-| Argument                    | Description                                                                                                                                                               | Required |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------- |
-| `--source`                  | Path to the source code file that will be optimized (e.g., `optimize.py`).                                                                                                | Yes      |
-| `--eval-command`            | Command to run for evaluating the code in `--source`. This command should print the target `--metric` and its value to the terminal (stdout/stderr). See note below.      | Yes      |
-| `--metric`                  | The name of the metric you want to optimize (e.g., 'accuracy', 'speedup', 'loss'). This metric name should match what's printed by your `--eval-command`.                 | Yes      |
-| `--maximize`                | Whether to maximize (`true`) or minimize (`false`) the metric.                                                                                                            | Yes      |
-| `--steps`                   | Number of optimization steps (LLM iterations) to run.                                                                                                                     | Yes      |
-| `--model`                   | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.5-sonnet`). Recommended models to try include `o3-mini`, `claude-3-haiku`, and `gemini-2.5-pro-exp-03-25`. | Yes      |
-| `--additional-instructions` | (Optional) Natural language description of specific instructions OR path to a file containing detailed instructions to guide the LLM.                                     | No       |
-| `--log-dir`                 | (Optional) Path to the directory to log intermediate steps and final optimization result. Defaults to `.runs/`.                                                           | No       |
+**Required:**
+
+| Argument            | Description                                                                                                                                                                                  |
+| :------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-s, --source`      | Path to the source code file that will be optimized (e.g., `optimize.py`).                                                                                                                   |
+| `-c, --eval-command`| Command to run for evaluating the code in `--source`. This command should print the target `--metric` and its value to the terminal (stdout/stderr). See note below.                        |
+| `-m, --metric`      | The name of the metric you want to optimize (e.g., 'accuracy', 'speedup', 'loss'). This metric name should match what's printed by your `--eval-command`.                                    |
+| `-g, --goal`   | `maximize`/`max` to maximize the `--metric` or `minimize`/`min` to minimize it. |
+
+<br>
+
+**Optional:**
+
+| Argument                       | Description                                                                                                                                                                                                                | Default |
+| :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------ |
+| `-n, --steps`                  | Number of optimization steps (LLM iterations) to run.                                                                                                                                                                      | 100 |
+| `-M, --model`                  | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.5-sonnet`).                                                                                                                                                 | `o4-mini` when `OPENAI_API_KEY` is set; `claude-3-7-sonnet-20250219` when `ANTHROPIC_API_KEY` is set; `gemini-2.5-pro-exp-03-25` when `GEMINI_API_KEY` is set (priority: `OPENAI_API_KEY` > `ANTHROPIC_API_KEY` > `GEMINI_API_KEY`). |
+| `-i, --additional-instructions`| Natural language description of specific instructions **or** path to a file containing detailed instructions to guide the LLM.                                                                                             | `None` |
+| `-l, --log-dir`                | Path to the directory to log intermediate steps and final optimization result.                                                                                                                                             | `.runs/` |
 
 ---
 
