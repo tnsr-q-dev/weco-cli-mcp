@@ -98,6 +98,7 @@ def signal_handler(signum, frame):
             reason=f"user_terminated_{signal_name.lower()}",
             details=f"Process terminated by signal {signal_name} ({signum}).",
             auth_headers=current_auth_headers_for_heartbeat,
+            timeout=3,
         )
 
     sys.exit(0)
