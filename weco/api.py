@@ -99,10 +99,7 @@ def get_optimization_run_status(
     """Get the current status of the optimization run."""
     try:
         response = requests.get(
-            f"{__base_url__}/runs/{run_id}",
-            params={"include_history": include_history},
-            headers=auth_headers,
-            timeout=timeout,
+            f"{__base_url__}/runs/{run_id}", params={"include_history": include_history}, headers=auth_headers, timeout=timeout
         )
         response.raise_for_status()
         return response.json()
@@ -114,11 +111,7 @@ def get_optimization_run_status(
         raise  # Re-raise
 
 
-def send_heartbeat(
-    run_id: str,
-    auth_headers: dict = {},
-    timeout: int = 10,
-) -> bool:
+def send_heartbeat(run_id: str, auth_headers: dict = {}, timeout: int = 10) -> bool:
     """Send a heartbeat signal to the backend."""
     try:
         response = requests.put(f"{__base_url__}/runs/{run_id}/heartbeat", headers=auth_headers, timeout=timeout)
@@ -136,12 +129,7 @@ def send_heartbeat(
 
 
 def report_termination(
-    run_id: str,
-    status_update: str,
-    reason: str,
-    details: Optional[str] = None,
-    auth_headers: dict = {},
-    timeout: int = 30,
+    run_id: str, status_update: str, reason: str, details: Optional[str] = None, auth_headers: dict = {}, timeout: int = 30
 ) -> bool:
     """Report the termination reason to the backend."""
     try:

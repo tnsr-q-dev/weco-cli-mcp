@@ -76,9 +76,7 @@ class HeartbeatSender(threading.Thread):
                 self.stop_event.wait(self.interval)
 
         except Exception as e:
-            print(
-                f"[ERROR HeartbeatSender] Unhandled exception in run loop for run {self.run_id}: {e}", file=sys.stderr
-            )
+            print(f"[ERROR HeartbeatSender] Unhandled exception in run loop for run {self.run_id}: {e}", file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
 
 
@@ -200,12 +198,14 @@ def perform_login(console: Console):
         console.print(f"\n[bold red]An unexpected error occurred during login:[/] {e}")
         return False
 
+
 def main() -> None:
     """Main function for the Weco CLI."""
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
     from . import __pkg_version__
+
     check_for_cli_updates(__pkg_version__)
 
     parser = argparse.ArgumentParser(
@@ -354,11 +354,7 @@ def main() -> None:
                 tree_panel.set_unevaluated_node(node_id=run_response["solution_id"])
                 solution_panels.update(
                     current_node=Node(
-                        id=run_response["solution_id"],
-                        parent_id=None,
-                        code=run_response["code"],
-                        metric=None,
-                        is_buggy=False,
+                        id=run_response["solution_id"], parent_id=None, code=run_response["code"], metric=None, is_buggy=False
                     ),
                     best_node=None,
                 )
@@ -393,10 +389,7 @@ def main() -> None:
                     if run_id:
                         try:
                             current_status_response = get_optimization_run_status(
-                                run_id=run_id,
-                                include_history=False,
-                                timeout=30,
-                                auth_headers=auth_headers,
+                                run_id=run_id, include_history=False, timeout=30, auth_headers=auth_headers
                             )
                             current_run_status_val = current_status_response.get("status")
                             if current_run_status_val == "stopping":
@@ -430,7 +423,7 @@ def main() -> None:
                     summary_panel.set_step(step=step)
                     summary_panel.update_token_counts(usage=eval_and_next_solution_response["usage"])
                     plan_panel.update(plan=eval_and_next_solution_response["plan"])
-                    
+
                     nodes_list_from_status = status_response.get("nodes")
                     tree_panel.build_metric_tree(nodes=nodes_list_from_status if nodes_list_from_status is not None else [])
                     tree_panel.set_unevaluated_node(node_id=eval_and_next_solution_response["solution_id"])
@@ -459,7 +452,7 @@ def main() -> None:
                                 )
                     if current_solution_node is None:
                         raise ValueError("Current solution node not found in nodes list from status response")
-                    
+
                     solution_panels.update(current_node=current_solution_node, best_node=best_solution_node)
                     current_solution_panel, best_solution_panel = solution_panels.get_display(current_step=step)
                     eval_output_panel.clear()
@@ -503,8 +496,10 @@ def main() -> None:
                         run_id=run_id, include_history=True, timeout=timeout, auth_headers=auth_headers
                     )
                     nodes_list_from_status_final = status_response.get("nodes")
-                    tree_panel.build_metric_tree(nodes=nodes_list_from_status_final if nodes_list_from_status_final is not None else [])
-                    
+                    tree_panel.build_metric_tree(
+                        nodes=nodes_list_from_status_final if nodes_list_from_status_final is not None else []
+                    )
+
                     if status_response["best_result"] is not None:
                         best_solution_node = Node(
                             id=status_response["best_result"]["solution_id"],
