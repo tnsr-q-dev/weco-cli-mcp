@@ -49,7 +49,7 @@ def start_optimization_run(
                     },
                     "metadata": {"client_name": "cli", "client_version": __pkg_version__, **api_keys},
                 },
-                headers=auth_headers,  # Add headers
+                headers=auth_headers,
                 timeout=timeout,
             )
             response.raise_for_status()
@@ -79,7 +79,7 @@ def evaluate_feedback_then_suggest_next_solution(
                 "additional_instructions": additional_instructions,
                 "metadata": {**api_keys},
             },
-            headers=auth_headers,  # Add headers
+            headers=auth_headers,
             timeout=timeout,
         )
         response.raise_for_status()
