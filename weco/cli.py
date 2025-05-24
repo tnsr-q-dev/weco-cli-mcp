@@ -239,28 +239,55 @@ def main() -> None:
 
     # --- Run Command ---
     run_parser = subparsers.add_parser(
-        "run", help="Run code optimization", formatter_class=argparse.RawDescriptionHelpFormatter
+        "run", help="Run code optimization", formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False
     )
-    run_parser.add_argument("--source", type=str, required=True, help="Path to the source code file (e.g. optimize.py)")
+    # Add arguments specific to the 'run' command to the run_parser
     run_parser.add_argument(
-        "--eval-command", type=str, required=True, help="Command to run for evaluation (e.g. 'python eval.py --arg1=val1')"
-    )
-    run_parser.add_argument("--metric", type=str, required=True, help="Metric to optimize")
-    run_parser.add_argument(
-        "--maximize",
+        "-s",
+        "--source",
         type=str,
-        choices=["true", "false"],
         required=True,
-        help="Specify 'true' to maximize the metric or 'false' to minimize.",
+        help="Path to the source code file that will be optimized (e.g., `optimize.py`)",
     )
-    run_parser.add_argument("--steps", type=int, required=True, help="Number of steps to run")
-    run_parser.add_argument("--model", type=str, required=True, help="Model to use for optimization")
-    run_parser.add_argument("--log-dir", type=str, default=".runs", help="Directory to store logs and results")
     run_parser.add_argument(
+        "-c",
+        "--eval-command",
+        type=str,
+        required=True,
+        help="Command to run for evaluation (e.g. 'python eval.py --arg1=val1').",
+    )
+    run_parser.add_argument(
+        "-m",
+        "--metric",
+        type=str,
+        required=True,
+        help="Metric to optimize (e.g. 'accuracy', 'loss', 'f1_score') that is printed to the terminal by the eval command.",
+    )
+    run_parser.add_argument(
+        "-g",
+        "--goal",
+        type=str,
+        choices=["maximize", "max", "minimize", "min"],
+        required=True,
+        help="Specify 'maximize'/'max' to maximize the metric or 'minimize'/'min' to minimize it.",
+    )
+    run_parser.add_argument("-n", "--steps", type=int, default=100, help="Number of steps to run. Defaults to 100.")
+    run_parser.add_argument(
+        "-M",
+        "--model",
+        type=str,
+        default=None,
+        help="Model to use for optimization. Defaults to `o4-mini` when `OPENAI_API_KEY` is set, `claude-3-7-sonnet-20250219` when `ANTHROPIC_API_KEY` is set, and `gemini-2.5-pro-exp-03-25` when `GEMINI_API_KEY` is set. When multiple keys are set, the priority is `OPENAI_API_KEY` > `ANTHROPIC_API_KEY` > `GEMINI_API_KEY`.",
+    )
+    run_parser.add_argument(
+        "-l", "--log-dir", type=str, default=".runs", help="Directory to store logs and results. Defaults to `.runs`."
+    )
+    run_parser.add_argument(
+        "-i",
         "--additional-instructions",
         default=None,
         type=str,
-        help="Description of additional instruction or path to a file containing additional instructions",
+        help="Description of additional instruction or path to a file containing additional instructions. Defaults to None.",
     )
 
     _ = subparsers.add_parser("logout", help="Log out from Weco and clear saved API key.")
@@ -311,8 +338,20 @@ def main() -> None:
             # --- Read Command Line Arguments ---
             evaluation_command = args.eval_command
             metric_name = args.metric
-            maximize = args.maximize == "true"
+            maximize = args.goal in ["maximize", "max"]
             steps = args.steps
+            # Determine the model to use
+            if args.model is None:
+                if "OPENAI_API_KEY" in llm_api_keys:
+                    args.model = "o4-mini"
+                elif "ANTHROPIC_API_KEY" in llm_api_keys:
+                    args.model = "claude-3-7-sonnet-20250219"
+                elif "GEMINI_API_KEY" in llm_api_keys:
+                    args.model = "gemini-2.5-pro-exp-03-25"
+                else:
+                    raise ValueError(
+                        "No LLM API keys found in environment. Please set one of the following: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY."
+                    )
             code_generator_config = {"model": args.model}
             evaluator_config = {"model": args.model, "include_analysis": True}
             search_policy_config = {
