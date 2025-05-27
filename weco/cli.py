@@ -2,9 +2,7 @@ import argparse
 import sys
 import pathlib
 import math
-import time
 import requests
-import webbrowser
 import threading
 import signal
 import traceback
@@ -12,18 +10,15 @@ from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
 from rich.traceback import install
-from rich.prompt import Prompt
 from .api import (
     start_optimization_run,
     evaluate_feedback_then_suggest_next_solution,
     get_optimization_run_status,
-    handle_api_error,
     send_heartbeat,
     report_termination,
 )
 
-from . import __base_url__
-from .auth import load_weco_api_key, save_api_key, clear_api_key
+from .auth import clear_api_key, handle_authentication
 from .panels import (
     SummaryPanel,
     PlanPanel,
@@ -70,7 +65,7 @@ class HeartbeatSender(threading.Thread):
                 if not send_heartbeat(self.run_id, self.auth_headers):
                     # send_heartbeat itself prints errors to stderr if it returns False
                     # No explicit HeartbeatSender log needed here unless more detail is desired for a False return
-                    pass  # Continue trying as per original logic
+                    pass
 
                 if self.stop_event.is_set():  # Check before waiting for responsiveness
                     break
@@ -109,117 +104,6 @@ def signal_handler(signum, frame):
     sys.exit(0)
 
 
-def perform_login(console: Console):
-    """Handles the device login flow."""
-    try:
-        # 1. Initiate device login
-        console.print("Initiating login...")
-        init_response = requests.post(f"{__base_url__}/auth/device/initiate")
-        init_response.raise_for_status()
-        init_data = init_response.json()
-
-        device_code = init_data["device_code"]
-        verification_uri = init_data["verification_uri"]
-        expires_in = init_data["expires_in"]
-        interval = init_data["interval"]
-
-        # 2. Display instructions
-        console.print("\n[bold yellow]Action Required:[/]")
-        console.print("Please open the following URL in your browser to authenticate:")
-        console.print(f"[link={verification_uri}]{verification_uri}[/link]")
-        console.print(f"This request will expire in {expires_in // 60} minutes.")
-        console.print("Attempting to open the authentication page in your default browser...")  # Notify user
-
-        # Automatically open the browser
-        try:
-            if not webbrowser.open(verification_uri):
-                console.print("[yellow]Could not automatically open the browser. Please open the link manually.[/]")
-        except Exception as browser_err:
-            console.print(
-                f"[yellow]Could not automatically open the browser ({browser_err}). Please open the link manually.[/]"
-            )
-
-        console.print("Waiting for authentication...", end="")
-
-        # 3. Poll for token
-        start_time = time.time()
-        # Use a simple text update instead of Spinner within Live for potentially better compatibility
-        polling_status = "Waiting..."
-        with Live(polling_status, refresh_per_second=1, transient=True, console=console) as live_status:
-            while True:
-                # Check for timeout
-                if time.time() - start_time > expires_in:
-                    console.print("\n[bold red]Error:[/] Login request timed out.")
-                    return False
-
-                time.sleep(interval)
-                live_status.update("Waiting... (checking status)")
-
-                try:
-                    token_response = requests.post(
-                        f"{__base_url__}/auth/device/token",
-                        json={"grant_type": "urn:ietf:params:oauth:grant-type:device_code", "device_code": device_code},
-                    )
-
-                    # Check for 202 Accepted - Authorization Pending
-                    if token_response.status_code == 202:
-                        token_data = token_response.json()
-                        if token_data.get("error") == "authorization_pending":
-                            live_status.update("Waiting... (authorization pending)")
-                            continue  # Continue polling
-                        else:
-                            # Unexpected 202 response format
-                            console.print(f"\n[bold red]Error:[/] Received unexpected 202 response: {token_data}")
-                            return False
-                    # Check for standard OAuth2 errors (often 400 Bad Request)
-                    elif token_response.status_code == 400:
-                        token_data = token_response.json()
-                        error_code = token_data.get("error", "unknown_error")
-                        if error_code == "slow_down":
-                            interval += 5  # Increase polling interval if instructed
-                            live_status.update(f"Waiting... (slowing down polling to {interval}s)")
-                            continue
-                        elif error_code == "expired_token":
-                            console.print("\n[bold red]Error:[/] Login request expired.")
-                            return False
-                        elif error_code == "access_denied":
-                            console.print("\n[bold red]Error:[/] Authorization denied by user.")
-                            return False
-                        else:  # invalid_grant, etc.
-                            error_desc = token_data.get("error_description", "Unknown error during polling.")
-                            console.print(f"\n[bold red]Error:[/] {error_desc} ({error_code})")
-                            return False
-
-                    # Check for other non-200/non-202/non-400 HTTP errors
-                    token_response.raise_for_status()
-                    # If successful (200 OK and no 'error' field)
-                    token_data = token_response.json()
-                    if "access_token" in token_data:
-                        api_key = token_data["access_token"]
-                        save_api_key(api_key)
-                        console.print("\n[bold green]Login successful![/]")
-                        return True
-                    else:
-                        # Unexpected successful response format
-                        console.print("\n[bold red]Error:[/] Received unexpected response from server during polling.")
-                        print(token_data)
-                        return False
-                except requests.exceptions.RequestException as e:
-                    # Handle network errors during polling gracefully
-                    live_status.update("Waiting... (network error, retrying)")
-                    console.print(f"\n[bold yellow]Warning:[/] Network error during polling: {e}. Retrying...")
-                    time.sleep(interval * 2)  # Simple backoff
-    except requests.exceptions.HTTPError as e:
-        handle_api_error(e, console)
-    except requests.exceptions.RequestException as e:
-        # Catch other request errors
-        console.print(f"\n[bold red]Network Error:[/] {e}")
-        return False
-    except Exception as e:
-        console.print(f"\n[bold red]An unexpected error occurred during login:[/] {e}")
-        return False
-
-
 def main() -> None:
     """Main function for the Weco CLI."""
     # Setup signal handlers
@@ -227,9 +111,7 @@ def main() -> None:
     signal.signal(signal.SIGTERM, signal_handler)
 
     # --- Perform Update Check ---
-    from . import __pkg_version__
-
-    check_for_cli_updates(__pkg_version__)
+    check_for_cli_updates()
 
     # --- Argument Parsing ---
     parser = argparse.ArgumentParser(
@@ -301,36 +183,14 @@ def main() -> None:
         run_id = None  # Initialize run_id (we receive this from the API after starting the run)
         optimization_completed_normally = False
         user_stop_requested_flag = False
-        weco_api_key = load_weco_api_key()
         llm_api_keys = read_api_keys_from_env()  # Read keys from client environment
 
         # --- Login/Authentication Handling ---
-        if not weco_api_key:
-            login_choice = Prompt.ask(
-                "Log in to Weco to save run history or use anonymously? ([bold]L[/]ogin / [bold]S[/]kip)",
-                choices=["l", "s"],
-                default="s",
-            ).lower()
-            if login_choice == "l":
-                console.print("[cyan]Starting login process...[/]")
-                if not perform_login(console):
-                    console.print("[bold red]Login process failed or was cancelled.[/]")
-                    sys.exit(1)
-                weco_api_key = load_weco_api_key()
-                if not weco_api_key:
-                    console.print("[bold red]Error: Login completed but failed to retrieve API key.[/]")
-                    sys.exit(1)
-            elif login_choice == "s":
-                console.print("[yellow]Proceeding anonymously. LLM API keys must be provided via environment variables.[/]")
-                if not llm_api_keys:
-                    console.print(
-                        "[bold red]Error:[/] No LLM API keys found in environment (e.g., OPENAI_API_KEY). Cannot proceed anonymously."
-                    )
-                    sys.exit(1)
+        weco_api_key, auth_headers = handle_authentication(console, llm_api_keys)
+        if weco_api_key is None and not llm_api_keys:
+            # Authentication failed and no LLM keys available
+            sys.exit(1)
 
-        auth_headers = {}
-        if weco_api_key:
-            auth_headers["Authorization"] = f"Bearer {weco_api_key}"
         current_auth_headers_for_heartbeat = auth_headers  # Store for signal handler
 
         # --- Main Run Logic ---
@@ -401,7 +261,7 @@ def main() -> None:
 
             # --- Live Update Loop ---
             refresh_rate = 4
-            with Live(layout, refresh_per_second=refresh_rate, screen=True) as live:
+            with Live(layout, refresh_per_second=refresh_rate) as live:
                 # Define the runs directory (.runs/<run-id>) to store logs and results
                 runs_dir = pathlib.Path(args.log_dir) / run_id
                 runs_dir.mkdir(parents=True, exist_ok=True)
@@ -664,51 +524,31 @@ def main() -> None:
             console.print(Panel(f"[bold red]Error: {error_message}", title="[bold red]Optimization Error", border_style="red"))
             # Ensure optimization_completed_normally is False
             optimization_completed_normally = False
-            error_details = traceback.format_exc()
-            exit_code = 1
         finally:
-            # This block runs whether the try block completed normally or raised an exception
             # Stop heartbeat thread
             stop_heartbeat_event.set()
             if heartbeat_thread and heartbeat_thread.is_alive():
                 heartbeat_thread.join(timeout=2)
 
-            # Report final status if a run was started
+            # Report final status if run exists
             if run_id:
-                final_status_update = "unknown"
-                final_reason_code = "unknown_termination"
-                final_details = None
                 if optimization_completed_normally:
-                    final_status_update = "completed"
-                    final_reason_code = "completed_successfully"
+                    status, reason, details = "completed", "completed_successfully", None
                 elif user_stop_requested_flag:
-                    final_status_update = "terminated"
-                    final_reason_code = "user_requested_stop"
-                    final_details = "Run stopped by user request via dashboard."
+                    status, reason, details = "terminated", "user_requested_stop", "Run stopped by user request via dashboard."
                 else:
-                    final_status_update = "error"
-                    final_reason_code = "error_cli_internal"
-                    if "error_details" in locals():
-                        final_details = locals()["error_details"]
-                    elif "e" in locals() and isinstance(locals()["e"], Exception):
-                        final_details = traceback.format_exc()
-                    else:
-                        final_details = "CLI terminated unexpectedly without a specific exception captured."
-                # Keep default 'unknown' if we somehow end up here without error/completion/signal
-                # Avoid reporting if terminated by signal handler (already reported)
-                # Check a flag or rely on status not being 'unknown'
-                if final_status_update != "unknown":
-                    report_termination(
-                        run_id=run_id,
-                        status_update=final_status_update,
-                        reason=final_reason_code,
-                        details=final_details,
-                        auth_headers=current_auth_headers_for_heartbeat,
+                    status, reason = "error", "error_cli_internal"
+                    details = locals().get("error_details") or (
+                        traceback.format_exc()
+                        if "e" in locals() and isinstance(locals()["e"], Exception)
+                        else "CLI terminated unexpectedly without a specific exception captured."
                     )
-            if optimization_completed_normally:
-                sys.exit(0)
-            elif user_stop_requested_flag:
+
+                report_termination(run_id, status, reason, details, current_auth_headers_for_heartbeat)
+
+            # Handle exit
+            if user_stop_requested_flag:
                 console.print("[yellow]Run terminated by user request.[/]")
-                sys.exit(0)
-            else:
-                sys.exit(locals().get("exit_code", 1))
+
+            exit_code = 0 if optimization_completed_normally or user_stop_requested_flag else locals().get("exit_code", 1)
+            sys.exit(exit_code)
