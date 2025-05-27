@@ -11,9 +11,9 @@ from .__init__ import __dashboard_url__
 
 
 class SummaryPanel:
-    """Holds a summary of the optimization session."""
+    """Holds a summary of the optimization run."""
 
-    def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, runs_dir: str, session_id: str = None):
+    def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, runs_dir: str, run_id: str = None):
         self.maximize = maximize
         self.metric_name = metric_name
         self.goal = ("Maximizing" if self.maximize else "Minimizing") + f" {self.metric_name}..."
@@ -22,7 +22,7 @@ class SummaryPanel:
         self.total_steps = total_steps
         self.model = model
         self.runs_dir = runs_dir
-        self.session_id = session_id if session_id is not None else "N/A"
+        self.run_id = run_id if run_id is not None else "N/A"
         self.dashboard_url = "N/A"
         self.progress = Progress(
             TextColumn("[progress.description]{task.description}"),
@@ -34,14 +34,14 @@ class SummaryPanel:
         )
         self.task_id = self.progress.add_task("", total=total_steps)
 
-    def set_session_id(self, session_id: str):
-        """Set the session ID."""
-        self.session_id = session_id
-        self.set_dashboard_url(session_id=session_id)
+    def set_run_id(self, run_id: str):
+        """Set the run ID."""
+        self.run_id = run_id
+        self.set_dashboard_url(run_id=run_id)
 
-    def set_dashboard_url(self, session_id: str):
+    def set_dashboard_url(self, run_id: str):
         """Set the dashboard URL."""
-        self.dashboard_url = f"{__dashboard_url__}/runs/{session_id}"
+        self.dashboard_url = f"{__dashboard_url__}/runs/{run_id}"
 
     def set_step(self, step: int):
         """Set the current step."""
@@ -70,7 +70,7 @@ class SummaryPanel:
         summary_table.add_row(f"[bold cyan]Model:[/] {self.model}")
         summary_table.add_row("")
         # Log directory
-        summary_table.add_row(f"[bold cyan]Logs:[/] [blue underline]{self.runs_dir}/{self.session_id}[/]")
+        summary_table.add_row(f"[bold cyan]Logs:[/] [blue underline]{self.runs_dir}/{self.run_id}[/]")
         summary_table.add_row("")
         # Dashboard link
         summary_table.add_row(f"[bold cyan]Dashboard:[/] [blue underline]{self.dashboard_url}[/]")
@@ -175,6 +175,9 @@ class MetricTreePanel:
 
     def build_metric_tree(self, nodes: List[dict]):
         """Build the tree from the list of nodes."""
+        # Defensive: treat None as empty list
+        if nodes is None:
+            nodes = []
         # First clear then tree
         self.metric_tree.clear()
 
