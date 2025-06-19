@@ -21,7 +21,7 @@ This example uses `gpt-4o-mini` via the OpenAI API by default. Ensure your `OPEN
    ```
 2. **Run Weco.**  The command below edits `EXTRA_INSTRUCTIONS` in `optimize.py`, invokes `eval.py` on every iteration, reads the printed accuracy, and keeps the best variants.
    ```bash
-   weco --source optimize.py \
+   weco run --source optimize.py \
         --eval-command "python eval.py" \
         --metric accuracy \
         --goal maximize \
