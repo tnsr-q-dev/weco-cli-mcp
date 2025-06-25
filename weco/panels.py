@@ -4,10 +4,8 @@ from rich.progress import BarColumn, Progress, TextColumn
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.syntax import Syntax
-from rich.text import Text
-from rich.console import Group
 from rich import box
-from typing import Dict, List, Optional, Union, Tuple, Any
+from typing import Dict, List, Optional, Union, Tuple
 from .utils import format_number
 import pathlib
 from .__init__ import __dashboard_url__
@@ -372,83 +370,6 @@ def create_end_optimization_layout() -> Layout:
     return layout
 
 
-# Chat-specific panels for the onboarding chatbot interface
-class ChatHeaderPanel:
-    """Header panel for the chat interface.
-
-    Displays a welcome message and title for the chatbot interface.
-    """
-
-    def get_display(self) -> Panel:
-        """Create the chat header panel."""
-        return Panel(
-            Text("Weco Onboarding Assistant", justify="center", style="bold cyan"),
-            title="[b]Welcome![/b]",
-            border_style="blue",
-        )
-
-
-class ChatHistoryPanel:
-    """Panel for displaying chat conversation history.
-
-    Maintains a list of conversation messages with appropriate styling
-    to distinguish between user messages and assistant responses.
-    """
-
-    def __init__(self):
-        self.chat_history_items: List[Any] = []
-
-    def add_message(self, content: Any, is_user: bool = False) -> None:
-        """Add content to chat history with appropriate styling.
-
-        Args:
-            content: The message content (can be text, tables, or other Rich renderables)
-            is_user: True for user messages, False for assistant messages
-        """
-        if is_user:
-            # User messages get blue border and "You" title
-            styled_content = Panel(Text(str(content)), border_style="blue", title="[b]You[/b]", padding=(0, 1))
-        else:
-            # Assistant messages get green border and "Weco" title
-            styled_content = Panel(content, border_style="green", title="[b]Weco[/b]", padding=(0, 1))
-
-        self.chat_history_items.append(styled_content)
-
-    def get_display(self) -> Panel:
-        """Create the chat history panel."""
-        return Panel(Group(*self.chat_history_items), title="[b]Conversation[/b]", border_style="green")
-
-
-class ChatFooterPanel:
-    """Footer panel for LLM status and user prompts.
-
-    Displays real-time LLM activity (thinking, generating responses) and
-    shows the current user prompt or action needed.
-    """
-
-    def __init__(self):
-        self.llm_status_text = Text("", style="italic dim")
-        self.current_prompt_text = Text("", style="bold yellow")
-
-    def set_llm_status(self, text: str) -> None:
-        """Set the LLM status text (e.g., 'Thinking...', 'Generating...')."""
-        self.llm_status_text.plain = text
-
-    def set_prompt_text(self, text: str) -> None:
-        """Set the current prompt text (what user should do next)."""
-        self.current_prompt_text.plain = text
-
-    def clear_llm_status(self) -> None:
-        """Clear the LLM status display."""
-        self.llm_status_text.plain = ""
-
-    def get_display(self) -> Tuple[Panel, Panel]:
-        """Get the LLM status and prompt panels as a tuple."""
-        llm_panel = Panel(self.llm_status_text, title="[b]LLM Status[/b]", border_style="magenta")
-        prompt_panel = Panel(self.current_prompt_text, title="[b]Your Action[/b]", border_style="yellow")
-        return llm_panel, prompt_panel
-
-
 class OptimizationOptionsPanel:
     """Panel for displaying optimization options in a table.
 
@@ -492,80 +413,3 @@ class EvaluationScriptPanel:
             expand=True,
             padding=(0, 1),
         )
-
-
-class ChatLayout:
-    """Manages the chat UI layout.
-
-    This class orchestrates the overall chat interface layout, combining
-    header, conversation history, and footer panels into a cohesive UI.
-
-    Layout structure:
-    ┌─────────────────────────────────────┐
-    │ Header (Welcome message)            │
-    ├─────────────────────────────────────┤
-    │                                     │
-    │ Chat Body (Conversation history)    │
-    │                                     │
-    ├─────────────────┬───────────────────┤
-    │ LLM Status      │ User Prompt Area  │
-    └─────────────────┴───────────────────┘
-    """
-
-    def __init__(self):
-        self.layout: Optional[Layout] = None
-        self.header_panel = ChatHeaderPanel()
-        self.history_panel = ChatHistoryPanel()
-        self.footer_panel = ChatFooterPanel()
-
-    def create_layout(self) -> Layout:
-        """Create the main chat UI layout with proper proportions."""
-        layout = Layout(name="root")
-        layout.split_column(
-            Layout(name="header", size=3),  # Fixed height for header
-            Layout(name="chat_body", ratio=1),  # Flexible space for conversation
-            Layout(name="footer", size=5),  # Fixed height for footer
-        )
-
-        # Initialize header with welcome message
-        layout["header"].update(self.header_panel.get_display())
-
-        # Initialize chat body with empty conversation
-        layout["chat_body"].update(self.history_panel.get_display())
-
-        # Split footer into LLM status and user prompt areas
-        layout["footer"].split_row(Layout(name="llm_status", ratio=1), Layout(name="user_prompt_area", ratio=1))
-
-        llm_panel, prompt_panel = self.footer_panel.get_display()
-        layout["llm_status"].update(llm_panel)
-        layout["user_prompt_area"].update(prompt_panel)
-
-        self.layout = layout
-        return layout
-
-    def add_to_chat_history(self, content: Any, is_user: bool = False) -> None:
-        """Add content to chat history and refresh the display."""
-        self.history_panel.add_message(content, is_user)
-        if self.layout:
-            self.layout["chat_body"].update(self.history_panel.get_display())
-
-    def set_llm_status(self, text: str) -> None:
-        """Set LLM status text and refresh the display."""
-        self.footer_panel.set_llm_status(text)
-        if self.layout:
-            llm_panel, _ = self.footer_panel.get_display()
-            self.layout["llm_status"].update(llm_panel)
-
-    def set_prompt_text(self, text: str) -> None:
-        """Set prompt text and refresh the display."""
-        self.footer_panel.set_prompt_text(text)
-        if self.layout:
-            _, prompt_panel = self.footer_panel.get_display()
-            self.layout["user_prompt_area"].update(prompt_panel)
-
-    def clear_llm_status(self) -> None:
-        """Clear LLM status and refresh the display."""
-        self.footer_panel.clear_llm_status()
-        if self.layout:
-            llm_panel, _ = self.footer_panel.get_display()
-            self.layout["llm_status"].update(llm_panel)

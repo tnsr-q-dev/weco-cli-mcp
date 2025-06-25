@@ -14,7 +14,7 @@ from .api import (
     analyze_script_execution_requirements,
     analyze_evaluation_environment,
 )
-from .panels import ChatLayout, OptimizationOptionsPanel, EvaluationScriptPanel
+from .panels import OptimizationOptionsPanel, EvaluationScriptPanel
 
 
 class UserInteractionHelper:
@@ -174,8 +174,7 @@ class Chatbot:
         self.gitingest_content: Optional[Dict[str, str]] = None
         self.gitingest_content_str: Optional[str] = None
 
-        # Chat UI components
-        self.chat_layout = ChatLayout()
+        # Chat UI components (removed unused chat layout)
         self.active_live_display: Optional[Live] = None
         self.use_chat_ui = False
 
