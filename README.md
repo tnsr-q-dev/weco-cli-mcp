@@ -31,7 +31,7 @@ Example applications include:
 
 ## Overview
 
-The `weco` CLI leverages a tree search approach guided by Large Language Models (LLMs) to iteratively explore and refine your code. It automatically applies changes, runs your evaluation script, parses the results, and proposes further improvements based on the specified goal.
+The `weco` CLI leverages a tree search approach guided by LLMs to iteratively explore and refine your code. It automatically applies changes, runs your evaluation script, parses the results, and proposes further improvements based on the specified goal.
 
 ![image](https://github.com/user-attachments/assets/a6ed63fa-9c40-498e-aa98-a873e5786509)
 
@@ -47,11 +47,11 @@ The `weco` CLI leverages a tree search approach guided by Large Language Models 
 
 2.  **Set Up LLM API Keys (Required):**
 
-    `weco` requires API keys for the Large Language Models (LLMs) it uses internally. You **must** provide these keys via environment variables:
+    `weco` requires API keys for the LLMs it uses internally. You **must** provide these keys via environment variables:
 
-    - **OpenAI:** `export OPENAI_API_KEY="your_key_here"`
-    - **Anthropic:** `export ANTHROPIC_API_KEY="your_key_here"`
-    - **Google DeepMind:** `export GEMINI_API_KEY="your_key_here"` (Google AI Studio has a free API usage quota. Create a key [here](https://aistudio.google.com/apikey) to use `weco` for free.)
+    - **OpenAI:** `export OPENAI_API_KEY="your_key_here"` (Create your API key [here](https://platform.openai.com/api-keys))
+    - **Anthropic:** `export ANTHROPIC_API_KEY="your_key_here"` (Create your API key [here](https://console.anthropic.com/settings/keys))
+    - **Google:** `export GEMINI_API_KEY="your_key_here"` (Google AI Studio has a free API usage quota. Create your API key [here](https://aistudio.google.com/apikey) to use `weco` for free.)
 
 ---
 
@@ -59,7 +59,7 @@ The `weco` CLI leverages a tree search approach guided by Large Language Models 
 
 ### Quick Start (Recommended for New Users)
 
-The easiest way to get started with Weco is to use the **interactive onboarding flow**. Simply navigate to your project directory and run:
+The easiest way to get started with Weco is to use the **interactive copilot**. Simply navigate to your project directory and run:
 
 ```bash
 weco
@@ -71,7 +71,7 @@ Or specify a project path:
 weco /path/to/your/project
 ```
 
-This launches Weco's intelligent onboarding assistant that will:
+This launches Weco's interactive copilot that will:
 
 1. **Analyze your codebase** using AI to understand your project structure and identify optimization opportunities
 2. **Suggest specific optimizations** tailored to your code (e.g., GPU kernel optimization, model improvements, prompt engineering)
@@ -84,9 +84,9 @@ This launches Weco's intelligent onboarding assistant that will:
   <code>weco</code> directly modifies the file specified by <code>--source</code> during the optimization process. It is <strong>strongly recommended</strong> to use version control (like Git) to track changes and revert if needed. Alternatively, ensure you have a backup of your original file before running the command. Upon completion, the file will contain the best-performing version of the code found during the run.
 </div>
 
-### Manual Setup (Advanced Users)
+### Manual Setup
 
-If you prefer to configure everything manually or need precise control over the optimization parameters, you can use the direct `weco run` command:
+**Configure optimization parameters yourself** - If you need precise control over the optimization parameters, you can use the direct `weco run` command:
 
 **Example: Optimizing Simple PyTorch Operations**
 
@@ -108,7 +108,7 @@ weco run --source optimize.py \
 
 **Note:** If you have an NVIDIA GPU, change the device in the `--eval-command` to `cuda`. If you are running this on Apple Silicon, set it to `mps`.
 
-For more advanced examples, including [Triton](/examples/triton/README.md), [CUDA kernel optimization](/examples/cuda/README.md), [ML model optimization](/examples/spaceship-titanic/README.md), and [prompt engineering for math problems](https://github.com/WecoAI/weco-cli/tree/main/examples/prompt), please see the `README.md` files within the corresponding subdirectories under the [`examples/`](./examples/) folder.
+For more advanced examples, including [Triton](/examples/triton/README.md), [CUDA kernel optimization](/examples/cuda/README.md), [ML model optimization](/examples/spaceship-titanic/README.md), and [prompt engineering for math problems](examples/prompt/README.md), please see the `README.md` files within the corresponding subdirectories under the [`examples/`](examples/) folder.
 
 ---
 
@@ -116,23 +116,23 @@ For more advanced examples, including [Triton](/examples/triton/README.md), [CUD
 
 **Required:**
 
-| Argument            | Description                                                                                                                                                                                  |
-| :------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-s, --source`      | Path to the source code file that will be optimized (e.g., `optimize.py`).                                                                                                                   |
-| `-c, --eval-command`| Command to run for evaluating the code in `--source`. This command should print the target `--metric` and its value to the terminal (stdout/stderr). See note below.                        |
-| `-m, --metric`      | The name of the metric you want to optimize (e.g., 'accuracy', 'speedup', 'loss'). This metric name should match what's printed by your `--eval-command`.                                    |
-| `-g, --goal`   | `maximize`/`max` to maximize the `--metric` or `minimize`/`min` to minimize it. |
+| Argument            | Description                                                                                                                                                                                  | Example               |
+| :------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------- |
+| `-s, --source`      | Path to the source code file that will be optimized.                                                                                                                   | `-s model.py`      |
+| `-c, --eval-command`| Command to run for evaluating the code in `--source`. This command should print the target `--metric` and its value to the terminal (stdout/stderr). See note below.                        | `-c "python eval.py"` |
+| `-m, --metric`      | The name of the metric you want to optimize (e.g., 'accuracy', 'speedup', 'loss'). This metric name does not need to match what's printed by your `--eval-command` exactly (e.g., its okay to use "speedup" instead of "Speedup:").                                    | `-m speedup`          |
+| `-g, --goal`        | `maximize`/`max` to maximize the `--metric` or `minimize`/`min` to minimize it.                                                                                                              | `-g maximize`         |
 
 <br>
 
 **Optional:**
 
-| Argument                       | Description                                                                                                                                                                                                                | Default |
-| :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------ |
-| `-n, --steps`                  | Number of optimization steps (LLM iterations) to run.                                                                                                                                                                      | 100 |
-| `-M, --model`                  | Model identifier for the LLM to use (e.g., `gpt-4o`, `claude-3.5-sonnet`).                                                                                                                                                 | `o4-mini` when `OPENAI_API_KEY` is set; `claude-3-7-sonnet-20250219` when `ANTHROPIC_API_KEY` is set; `gemini-2.5-pro-exp-03-25` when `GEMINI_API_KEY` is set (priority: `OPENAI_API_KEY` > `ANTHROPIC_API_KEY` > `GEMINI_API_KEY`). |
-| `-i, --additional-instructions`| Natural language description of specific instructions **or** path to a file containing detailed instructions to guide the LLM.                                                                                             | `None` |
-| `-l, --log-dir`                | Path to the directory to log intermediate steps and final optimization result.                                                                                                                                             | `.runs/` |
+| Argument                       | Description                                                                                                                                                                                                                | Default                                                                                                                                                | Example             |
+| :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------ |
+| `-n, --steps`                  | Number of optimization steps (LLM iterations) to run.                                                                                                                                                                      | 100                                                                                                                                                     | `-n 50`             |
+| `-M, --model`                  | Model identifier for the LLM to use (e.g., `o4-mini`, `claude-sonnet-4-0`).                                                                                                        | `o4-mini` when `OPENAI_API_KEY` is set; `claude-sonnet-4-0` when `ANTHROPIC_API_KEY` is set; `gemini-2.5-pro` when `GEMINI_API_KEY` is set. | `-M o4-mini`         |
+| `-i, --additional-instructions`| Natural language description of specific instructions **or** path to a file containing detailed instructions to guide the LLM.                                                                                             | `None`                                                                                                                                                  | `-i instructions.md` or `-i "Optimize the model for faster inference"`|
+| `-l, --log-dir`                | Path to the directory to log intermediate steps and final optimization result.                                                                                                                                             | `.runs/`                                                                                                                                               | `-l ./logs/`        |
 
 ---
 
@@ -184,8 +184,8 @@ weco run --model claude-3.5-sonnet --source optimize.py [other options...]
 
 **Available models:**
 - `gpt-4o`, `o4-mini` (requires `OPENAI_API_KEY`)
-- `claude-3.5-sonnet`, `claude-3-7-sonnet-20250219` (requires `ANTHROPIC_API_KEY`)
-- `gemini-2.5-pro-exp-03-25` (requires `GEMINI_API_KEY`)
+- `claude-3.5-sonnet`, `claude-sonnet-4-20250514` (requires `ANTHROPIC_API_KEY`)
+- `gemini-2.5-pro` (requires `GEMINI_API_KEY`)
 
 If no model is specified, Weco automatically selects the best available model based on your API keys.
 
@@ -225,16 +225,16 @@ Weco will parse this output to extract the numerical value (1.5 in this case) as
 
 ## Contributing
 
-We welcome contributions! To get started:
+We welcome your contributions! To get started:
 
-1.  **Fork and Clone the Repository:**
+1.  **Fork & Clone the Repository:**
 
     ```bash
     git clone https://github.com/WecoAI/weco-cli.git
     cd weco-cli
     ```
 
-2.  **Install Development Dependencies:**
+2.  **Install Dependencies:**
 
     ```bash
     pip install -e ".[dev]"
@@ -246,8 +246,8 @@ We welcome contributions! To get started:
     git checkout -b feature/your-feature-name
     ```
 
-4.  **Make Your Changes:** Ensure your code adheres to our style guidelines and includes relevant tests.
+4.  **Make Changes:** Ensure your code adheres to our style guidelines and includes relevant tests.
 
-5.  **Commit and Push** your changes, then open a pull request with a clear description of your enhancements.
+5.  **Commit, Push & Open a PR**: Commit your changes, and open a pull request with a clear description of your enhancements.
 
 ---
