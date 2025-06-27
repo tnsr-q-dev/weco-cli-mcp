@@ -14,30 +14,6 @@ This document outlines the strategy to improve speedup by writing fused and opti
 - **Focus on Efficiency:** Concentrate solely on efficient PyTorch and CUDA coding without capturing logs.
 - **Error Handling:** Any terminal output or errors will be reviewed by an LLM for feedback.
 
-## GPU Hardware Specifications
-
-Here are some details on the hardware you have access to.
-
-```json
-{
-    "GPU Architecture": "Ampere",
-    "GPU Memory": "40GB",
-    "Memory Bandwidth": "1935 GB/s",
-    "FP64 TFLOPS": "9.7",
-    "FP64 Tensor Core TFLOPS": "19.5",
-    "FP32 TFLOPS": "19.5",
-    "TF32 Tensor Core TFLOPS": "156 (312 with sparsity)",
-    "BFLOAT16 Tensore Core TFLOPS": "312 (624 with sparsity)",
-    "FP16 Tensor Core TFLOPS": "312 (624 with sparsity)",
-    "INT8 Tensor Core TOPS": "624 (1248 with sparsity)",
-    "Register File Size": "64K 32-bit registers per SM",
-    "Maximum number of registers per thread": "255",
-    "Maximum number of thread blocks per SM": "32",
-    "Shared memory capacity per SM": "164 KB",
-    "Maximum shared memory per thread block": "163 KB"
-}
-```
-
 ## Baseline Code
 
 The baseline implementation of the `Model` class simply performs an element-wise addition.
