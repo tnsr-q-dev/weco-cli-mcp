@@ -189,9 +189,9 @@ def _determine_model_and_api_key() -> tuple[str, dict[str, str]]:
     # Create API key dictionary with only the key for the selected model
     if model == "o4-mini":
         api_key_dict = {"OPENAI_API_KEY": llm_api_keys["OPENAI_API_KEY"]}
-    elif model == "claude-3-7-sonnet-20250219":
+    elif model == "claude-sonnet-4-0":
         api_key_dict = {"ANTHROPIC_API_KEY": llm_api_keys["ANTHROPIC_API_KEY"]}
-    elif model == "gemini-2.5-pro-exp-03-25":
+    elif model == "gemini-2.5-pro":
         api_key_dict = {"GEMINI_API_KEY": llm_api_keys["GEMINI_API_KEY"]}
     else:
         # This should never happen if determine_default_model works correctly

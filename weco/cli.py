@@ -49,7 +49,7 @@ def configure_run_parser(run_parser: argparse.ArgumentParser) -> None:
         "--model",
         type=str,
         default=None,
-        help="Model to use for optimization. Defaults to `o4-mini` when `OPENAI_API_KEY` is set, `claude-3-7-sonnet-20250219` when `ANTHROPIC_API_KEY` is set, and `gemini-2.5-pro-exp-03-25` when `GEMINI_API_KEY` is set. When multiple keys are set, the priority is `OPENAI_API_KEY` > `ANTHROPIC_API_KEY` > `GEMINI_API_KEY`.",
+        help="Model to use for optimization. Defaults to `o4-mini` when `OPENAI_API_KEY` is set, `claude-sonnet-4-0` when `ANTHROPIC_API_KEY` is set, and `gemini-2.5-pro` when `GEMINI_API_KEY` is set. When multiple keys are set, the priority is `OPENAI_API_KEY` > `ANTHROPIC_API_KEY` > `GEMINI_API_KEY`.",
     )
     run_parser.add_argument(
         "-l", "--log-dir", type=str, default=".runs", help="Directory to store logs and results. Defaults to `.runs`."
@@ -97,7 +97,7 @@ def main() -> None:
         "--model",
         type=str,
         default=None,
-        help="Model to use for optimization. Defaults to `o4-mini` when `OPENAI_API_KEY` is set, `claude-3-7-sonnet-20250219` when `ANTHROPIC_API_KEY` is set, and `gemini-2.5-pro-exp-03-25` when `GEMINI_API_KEY` is set. When multiple keys are set, the priority is `OPENAI_API_KEY` > `ANTHROPIC_API_KEY` > `GEMINI_API_KEY`.",
+        help="Model to use for optimization. Defaults to `o4-mini` when `OPENAI_API_KEY` is set, `claude-sonnet-4-0` when `ANTHROPIC_API_KEY` is set, and `gemini-2.5-pro` when `GEMINI_API_KEY` is set. When multiple keys are set, the priority is `OPENAI_API_KEY` > `ANTHROPIC_API_KEY` > `GEMINI_API_KEY`.",
     )
 
     subparsers = parser.add_subparsers(
