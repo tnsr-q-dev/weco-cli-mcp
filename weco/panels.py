@@ -4,6 +4,7 @@ from rich.progress import BarColumn, Progress, TextColumn
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.syntax import Syntax
+from rich import box
 from typing import Dict, List, Optional, Union, Tuple
 from .utils import format_number
 import pathlib
@@ -367,3 +368,48 @@ def create_end_optimization_layout() -> Layout:
     layout["bottom_section"].split_row(Layout(name="best_solution", ratio=1), Layout(name="tree", ratio=1))
 
     return layout
+
+
+class OptimizationOptionsPanel:
+    """Panel for displaying optimization options in a table.
+
+    Creates a formatted table showing optimization suggestions with details
+    like target file, description, estimated cost, and predicted gains.
+    """
+
+    def get_display(self, options: List[Dict[str, str]]) -> Table:
+        """Create optimization options table as a renderable object."""
+        table = Table(title="Optimization Options", show_lines=True, box=box.ROUNDED, border_style="cyan", padding=(1, 1))
+        table.add_column("No.", style="bold white", width=5, header_style="bold white", justify="center")
+        table.add_column("Target File", style="cyan", width=20, header_style="bold white")
+        table.add_column("Description", style="magenta", width=40, header_style="bold white")
+        table.add_column("Est. Token Cost", style="yellow", width=15, header_style="bold white")
+        table.add_column("Pred. Perf. Gain", style="green", width=20, header_style="bold white")
+
+        for i, opt in enumerate(options):
+            table.add_row(
+                str(i + 1),
+                opt["target_file"],
+                opt["description"],
+                opt["estimated_token_cost"],
+                opt["predicted_performance_gain"],
+            )
+        return table
+
+
+class EvaluationScriptPanel:
+    """Panel for displaying evaluation scripts with syntax highlighting.
+
+    Shows Python evaluation scripts with proper syntax highlighting,
+    line numbers, and a descriptive title.
+    """
+
+    def get_display(self, script_content: str, script_path: str = "evaluate.py") -> Panel:
+        """Create a panel displaying the evaluation script with syntax highlighting."""
+        return Panel(
+            Syntax(script_content, "python", theme="monokai", line_numbers=True),
+            title=f"[bold]📄 Evaluation Script: {script_path}",
+            border_style="cyan",
+            expand=True,
+            padding=(0, 1),
+        )

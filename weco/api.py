@@ -1,12 +1,30 @@
-from typing import Dict, Any, Optional
-import rich
-import requests
-from weco import __pkg_version__, __base_url__
 import sys
+from typing import Dict, Any, Optional, Union, Tuple, List
+
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from rich.console import Console
 
+from weco import __pkg_version__, __base_url__
 
-def handle_api_error(e: requests.exceptions.HTTPError, console: rich.console.Console) -> None:
+
+# --- Session Configuration ---
+def _get_weco_session() -> requests.Session:
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=1,
+        status_forcelist=[429, 500, 502, 503, 504],  # Retry on these server errors and rate limiting
+        allowed_methods=["HEAD", "GET", "PUT", "POST", "DELETE", "OPTIONS"],  # Case-insensitive
+        backoff_factor=1,  # e.g., sleep for 0s, 2s, 4s between retries (factor * (2 ** ({number of total retries} - 1)))
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
+
+def handle_api_error(e: requests.exceptions.HTTPError, console: Console) -> None:
     """Extract and display error messages from API responses in a structured format."""
     try:
         detail = e.response.json()["detail"]
@@ -18,7 +36,7 @@ def handle_api_error(e: requests.exceptions.HTTPError, console: rich.console.Con
 
 
 def start_optimization_run(
-    console: rich.console.Console,
+    console: Console,
     source_code: str,
     evaluation_command: str,
     metric_name: str,
@@ -30,12 +48,13 @@ def start_optimization_run(
     additional_instructions: str = None,
     api_keys: Dict[str, Any] = {},
     auth_headers: dict = {},
-    timeout: int = 800,
+    timeout: Union[int, Tuple[int, int]] = 800,
 ) -> Dict[str, Any]:
     """Start the optimization run."""
     with console.status("[bold green]Starting Optimization..."):
         try:
-            response = requests.post(
+            session = _get_weco_session()
+            response = session.post(
                 f"{__base_url__}/runs",
                 json={
                     "source_code": source_code,
@@ -68,11 +87,12 @@ def evaluate_feedback_then_suggest_next_solution(
     additional_instructions: str = None,
     api_keys: Dict[str, Any] = {},
     auth_headers: dict = {},
-    timeout: int = 800,
+    timeout: Union[int, Tuple[int, int]] = 800,
 ) -> Dict[str, Any]:
     """Evaluate the feedback and suggest the next solution."""
     try:
-        response = requests.post(
+        session = _get_weco_session()
+        response = session.post(
             f"{__base_url__}/runs/{run_id}/suggest",
             json={
                 "execution_output": execution_output,
@@ -94,11 +114,12 @@ def evaluate_feedback_then_suggest_next_solution(
 
 
 def get_optimization_run_status(
-    run_id: str, include_history: bool = False, auth_headers: dict = {}, timeout: int = 800
+    run_id: str, include_history: bool = False, auth_headers: dict = {}, timeout: Union[int, Tuple[int, int]] = 800
 ) -> Dict[str, Any]:
     """Get the current status of the optimization run."""
     try:
-        response = requests.get(
+        session = _get_weco_session()
+        response = session.get(
             f"{__base_url__}/runs/{run_id}", params={"include_history": include_history}, headers=auth_headers, timeout=timeout
         )
         response.raise_for_status()
@@ -111,10 +132,11 @@ def get_optimization_run_status(
         raise  # Re-raise
 
 
-def send_heartbeat(run_id: str, auth_headers: dict = {}, timeout: int = 10) -> bool:
+def send_heartbeat(run_id: str, auth_headers: dict = {}, timeout: Union[int, Tuple[int, int]] = 10) -> bool:
     """Send a heartbeat signal to the backend."""
     try:
-        response = requests.put(f"{__base_url__}/runs/{run_id}/heartbeat", headers=auth_headers, timeout=timeout)
+        session = _get_weco_session()
+        response = session.put(f"{__base_url__}/runs/{run_id}/heartbeat", headers=auth_headers, timeout=timeout)
         response.raise_for_status()
         return True
     except requests.exceptions.HTTPError as e:
@@ -129,11 +151,17 @@ def send_heartbeat(run_id: str, auth_headers: dict = {}, timeout: int = 10) -> b
 
 
 def report_termination(
-    run_id: str, status_update: str, reason: str, details: Optional[str] = None, auth_headers: dict = {}, timeout: int = 30
+    run_id: str,
+    status_update: str,
+    reason: str,
+    details: Optional[str] = None,
+    auth_headers: dict = {},
+    timeout: Union[int, Tuple[int, int]] = 30,
 ) -> bool:
     """Report the termination reason to the backend."""
     try:
-        response = requests.post(
+        session = _get_weco_session()
+        response = session.post(
             f"{__base_url__}/runs/{run_id}/terminate",
             json={"status_update": status_update, "termination_reason": reason, "termination_details": details},
             headers=auth_headers,
@@ -144,3 +172,188 @@ def report_termination(
     except requests.exceptions.RequestException as e:
         print(f"Warning: Failed to report termination to backend for run {run_id}: {e}", file=sys.stderr)
         return False
+
+
+# --- Chatbot API Functions ---
+def _determine_model_and_api_key() -> tuple[str, dict[str, str]]:
+    """Determine the model and API key to use based on available environment variables.
+
+    Uses the shared model selection logic to maintain consistency.
+    Returns (model_name, api_key_dict)
+    """
+    from .utils import read_api_keys_from_env, determine_default_model
+
+    llm_api_keys = read_api_keys_from_env()
+    model = determine_default_model(llm_api_keys)
+
+    # Create API key dictionary with only the key for the selected model
+    if model == "o4-mini":
+        api_key_dict = {"OPENAI_API_KEY": llm_api_keys["OPENAI_API_KEY"]}
+    elif model == "claude-sonnet-4-0":
+        api_key_dict = {"ANTHROPIC_API_KEY": llm_api_keys["ANTHROPIC_API_KEY"]}
+    elif model == "gemini-2.5-pro":
+        api_key_dict = {"GEMINI_API_KEY": llm_api_keys["GEMINI_API_KEY"]}
+    else:
+        # This should never happen if determine_default_model works correctly
+        raise ValueError(f"Unknown model returned: {model}")
+
+    return model, api_key_dict
+
+
+def get_optimization_suggestions_from_codebase(
+    gitingest_summary: str,
+    gitingest_tree: str,
+    gitingest_content_str: str,
+    console: Console,
+    auth_headers: dict = {},
+    timeout: Union[int, Tuple[int, int]] = 800,
+) -> Optional[List[Dict[str, Any]]]:
+    """Analyze codebase and get optimization suggestions using the model-agnostic backend API."""
+    try:
+        model, api_key_dict = _determine_model_and_api_key()
+        session = _get_weco_session()
+        response = session.post(
+            f"{__base_url__}/onboard/analyze-codebase",
+            json={
+                "gitingest_summary": gitingest_summary,
+                "gitingest_tree": gitingest_tree,
+                "gitingest_content": gitingest_content_str,
+                "model": model,
+                "metadata": api_key_dict,
+            },
+            headers=auth_headers,
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        result = response.json()
+        return [option for option in result.get("options", [])]
+
+    except requests.exceptions.HTTPError as e:
+        handle_api_error(e, console)
+        return None
+    except requests.exceptions.RequestException as e:
+        console.print(f"[bold red]Network Error getting optimization suggestions: {e}[/]")
+        return None
+    except Exception as e:
+        console.print(f"[bold red]Error calling backend API: {e}[/]")
+        return None
+
+
+def generate_evaluation_script_and_metrics(
+    target_file: str,
+    description: str,
+    gitingest_content_str: str,
+    console: Console,
+    auth_headers: dict = {},
+    timeout: Union[int, Tuple[int, int]] = 800,
+) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    """Generate evaluation script and determine metrics using the model-agnostic backend API."""
+    try:
+        model, api_key_dict = _determine_model_and_api_key()
+        session = _get_weco_session()
+        response = session.post(
+            f"{__base_url__}/onboard/generate-script",
+            json={
+                "target_file": target_file,
+                "description": description,
+                "gitingest_content": gitingest_content_str,
+                "model": model,
+                "metadata": api_key_dict,
+            },
+            headers=auth_headers,
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        result = response.json()
+        return result.get("script_content"), result.get("metric_name"), result.get("goal"), result.get("reasoning")
+
+    except requests.exceptions.HTTPError as e:
+        handle_api_error(e, console)
+        return None, None, None, None
+    except requests.exceptions.RequestException as e:
+        console.print(f"[bold red]Network Error generating evaluation script: {e}[/]")
+        return None, None, None, None
+    except Exception as e:
+        console.print(f"[bold red]Error calling backend API: {e}[/]")
+        return None, None, None, None
+
+
+def analyze_evaluation_environment(
+    target_file: str,
+    description: str,
+    gitingest_summary: str,
+    gitingest_tree: str,
+    gitingest_content_str: str,
+    console: Console,
+    auth_headers: dict = {},
+    timeout: Union[int, Tuple[int, int]] = 800,
+) -> Optional[Dict[str, Any]]:
+    """Analyze existing evaluation scripts and environment using the model-agnostic backend API."""
+    try:
+        model, api_key_dict = _determine_model_and_api_key()
+        session = _get_weco_session()
+        response = session.post(
+            f"{__base_url__}/onboard/analyze-environment",
+            json={
+                "target_file": target_file,
+                "description": description,
+                "gitingest_summary": gitingest_summary,
+                "gitingest_tree": gitingest_tree,
+                "gitingest_content": gitingest_content_str,
+                "model": model,
+                "metadata": api_key_dict,
+            },
+            headers=auth_headers,
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    except requests.exceptions.HTTPError as e:
+        handle_api_error(e, console)
+        return None
+    except requests.exceptions.RequestException as e:
+        console.print(f"[bold red]Network Error analyzing evaluation environment: {e}[/]")
+        return None
+    except Exception as e:
+        console.print(f"[bold red]Error calling backend API: {e}[/]")
+        return None
+
+
+def analyze_script_execution_requirements(
+    script_content: str,
+    script_path: str,
+    target_file: str,
+    console: Console,
+    auth_headers: dict = {},
+    timeout: Union[int, Tuple[int, int]] = 800,
+) -> Optional[str]:
+    """Analyze script to determine proper execution command using the model-agnostic backend API."""
+    try:
+        model, api_key_dict = _determine_model_and_api_key()
+        session = _get_weco_session()
+        response = session.post(
+            f"{__base_url__}/onboard/analyze-script",
+            json={
+                "script_content": script_content,
+                "script_path": script_path,
+                "target_file": target_file,
+                "model": model,
+                "metadata": api_key_dict,
+            },
+            headers=auth_headers,
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        result = response.json()
+        return result.get("command", f"python {script_path}")
+
+    except requests.exceptions.HTTPError as e:
+        handle_api_error(e, console)
+        return f"python {script_path}"
+    except requests.exceptions.RequestException as e:
+        console.print(f"[bold red]Network Error analyzing script execution: {e}[/]")
+        return f"python {script_path}"
+    except Exception as e:
+        console.print(f"[bold red]Error calling backend API: {e}[/]")
+        return f"python {script_path}"

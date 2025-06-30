@@ -23,6 +23,32 @@ def read_api_keys_from_env() -> Dict[str, Any]:
     return keys
 
 
+def determine_default_model(llm_api_keys: Dict[str, Any]) -> str:
+    """Determine the default model based on available API keys.
+
+    Uses priority: OpenAI > Anthropic > Gemini
+
+    Args:
+        llm_api_keys: Dictionary of available LLM API keys
+
+    Returns:
+        str: The default model name to use
+
+    Raises:
+        ValueError: If no LLM API keys are found
+    """
+    if "OPENAI_API_KEY" in llm_api_keys:
+        return "o4-mini"
+    elif "ANTHROPIC_API_KEY" in llm_api_keys:
+        return "claude-sonnet-4-0"
+    elif "GEMINI_API_KEY" in llm_api_keys:
+        return "gemini-2.5-pro"
+    else:
+        raise ValueError(
+            "No LLM API keys found in environment. Please set one of the following: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY."
+        )
+
+
 def read_additional_instructions(additional_instructions: str | None) -> str | None:
     """Read additional instructions from a file path string or return the string itself."""
     if additional_instructions is None:
