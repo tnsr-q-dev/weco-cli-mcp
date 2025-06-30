@@ -5,29 +5,30 @@ The experiment runs locally, requires only two short Python files and a prompt g
 
 ## Setup
 
-Install the CLI using `pip`:
-```bash
-pip install weco
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/WecoAI/weco-cli.git
+   cd examples/prompt
+   ```
 
-This example uses `gpt-4.1-mini` via the OpenAI API by default. Set up your API key:
-```bash
-export OPENAI_API_KEY="your_key_here"
-```
+2. Install the CLI and dependencies for the example:
+   ```bash
+   pip install weco openai datasets
+   ```
 
-Install the dependencies of the scripts shown in subsequent sections.
-```bash
-pip install openai datasets
-```
+3. This example uses `o4-mini` via the OpenAI API by default. Set up your API key:
+   ```bash
+   export OPENAI_API_KEY="your_key_here"
+   ```
+
 
 ## Files in this folder
 
 | File          | Purpose                                                                                                                                                           |
 | :------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `optimize.py` | Holds the prompt template (instructing the LLM to reason step-by-step and use `\\boxed{}` for the final answer) and the mutable `EXTRA_INSTRUCTIONS` string. Weco edits **only** this file during the search. |
-| `eval.py`     | Downloads a small slice of the 2024 AIME dataset, calls `optimize.solve` in parallel, parses the LLM output (looking for `\\boxed{}`), compares it to the ground truth, prints progress logs, and finally prints an `accuracy:` line that Weco reads. It also defines the LLM model to use (`MODEL_TO_USE`). |
+| `eval.py`     | Downloads a small slice of the 2024 AIME dataset, calls `optimize.solve` in parallel, parses the LLM output (looking for `\\boxed{}`), compares it to the ground truth, prints progress logs, and finally prints an `accuracy:` line that Weco reads. |
 
-## Run Weco
 
 Now run Weco to optimize your prompt:
 ```bash

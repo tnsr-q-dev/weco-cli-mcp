@@ -6,15 +6,14 @@ The goal is to improve the model's `accuracy` metric by optimizing the `train.py
 ## Setup
 
 1.  Ensure you are in the `examples/spaceship-titanic` directory.
-2.  **Install Dependencies:** Install the required Python packages:
+2.  Install Dependencies:
     ```bash
     pip install weco pandas numpy scikit-learn torch xgboost lightgbm catboost
     ```
-
-Set up your API key:
-```bash
-export OPENAI_API_KEY="your_key_here"
-```
+3. Set up your API key:
+    ```bash
+    export OPENAI_API_KEY="your_key_here"
+    ```
 
 ## Run Weco
 
@@ -33,8 +32,8 @@ weco run --source train.py \
 
 ### Explanation
 
-*   `--source train.py`: The script provides a baseline as root node and directly optimize the train.py
-*   `--eval-command "python evaluate.py --data-dir ./data/"`: The weco agent will run the `evaluate.py`.
+*   `--source train.py`: The script provides a baseline as root node and directly optimize the train.py.
+*   `--eval-command "python evaluate.py --data-dir ./data/ --seed 0"`: The weco agent will run the `evaluate.py`.
     *   [optional] `--data-dir`: path to the train and test data.
     *   [optional] `--seed`: Seed for reproduce the experiment.
 *   `--metric accuracy`: The target metric Weco should optimize.
