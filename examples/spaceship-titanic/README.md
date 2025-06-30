@@ -1,35 +1,39 @@
-# Example: Solving a Kaggle Competition (Spaceship Titanic)
+# Model Development (Kaggle Spaceship Titanic)
 
-This example demonstrates using Weco to optimize a Python script designed for the [Spaceship Titanic Kaggle competition](https://www.kaggle.com/competitions/spaceship-titanic/overview). The goal is to improve the model's `accuracy` metric by optimizing the `train.py`
+This example demonstrates using Weco to optimize a Python script designed for the [Spaceship Titanic Kaggle competition](https://www.kaggle.com/competitions/spaceship-titanic/overview).
+The goal is to improve the model's `accuracy` metric by optimizing the `train.py`
 
 ## Setup
 
 1.  Ensure you are in the `examples/spaceship-titanic` directory.
-2.  `pip install weco`
-3.  Set up LLM API Key, `export OPENAI_API_KEY="your_key_here"`
-4.  **Install Dependencies:** Install the required Python packages:
+2.  Install Dependencies:
     ```bash
-    pip install -r requirements-test.txt
+    pip install weco pandas numpy scikit-learn torch xgboost lightgbm catboost
+    ```
+3. Set up your API key:
+    ```bash
+    export OPENAI_API_KEY="your_key_here"
     ```
 
-## Optimization Command
+## Run Weco
 
 Run the following command to start optimizing the model:
 
 ```bash
 weco run --source train.py \
-         --eval-command "python evaluate.py --data-dir ./data --seed 0" \
-         --metric accuracy \
-         --goal maximize \
-         --steps 10 \
-         --model o4-mini \
-         --additional-instructions "Improve feature engineering, model choice and hyper-parameters."
+     --eval-command "python evaluate.py --data-dir ./data --seed 0" \
+     --metric accuracy \
+     --goal maximize \
+     --steps 10 \
+     --model o4-mini \
+     --additional-instructions "Improve feature engineering, model choice and hyper-parameters." \
+     --log-dir .runs/spaceship-titanic
 ```
 
 ### Explanation
 
-*   `--source train.py`: The script provides a baseline as root node and directly optimize the train.py
-*   `--eval-command "python evaluate.py --data-dir ./data/"`: The weco agent will run the `evaluate.py`.
+*   `--source train.py`: The script provides a baseline as root node and directly optimize the train.py.
+*   `--eval-command "python evaluate.py --data-dir ./data/ --seed 0"`: The weco agent will run the `evaluate.py`.
     *   [optional] `--data-dir`: path to the train and test data.
     *   [optional] `--seed`: Seed for reproduce the experiment.
 *   `--metric accuracy`: The target metric Weco should optimize.
@@ -37,5 +41,6 @@ weco run --source train.py \
 *   `--steps 10`: The number of optimization iterations.
 *   `--model o4-mini`: The LLM driving the optimization.
 *   `--additional-instructions "Improve feature engineering, model choice and hyper-parameters."`: A simple instruction for model improvement or you can put the path to [`comptition_description.md`](./competition_description.md) within the repo to feed the agent more detailed information.
+*   `--log-dir .runs/spaceship-titanic`: Specifies the directory where Weco should save logs and results for this run.
 
 Weco will iteratively update the feature engineering or modeling code within `train.py` guided by the evaluation method defined in `evaluate.py`

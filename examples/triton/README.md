@@ -1,38 +1,49 @@
-# Example: Optimizing PyTorch Self-Attention with Triton
+# Triton Optimization
 
-This example demonstrates using Weco to optimize a causal multi-head self-attention mechanism, a core component of Transformer models, implemented in PyTorch. The optimization target is to leverage [Triton](https://github.com/triton-lang/triton), a language and compiler for writing highly efficient GPU code, to accelerate the operation.
+This example demonstrates using Weco to optimize a causal multi-head self-attention mechanism, 
+a core component of Transformer models, implemented in PyTorch. 
+The optimization target is to leverage [Triton](https://github.com/triton-lang/triton) 
+for writing highly efficient GPU code, to accelerate the operation.
 
 ## Setup
 
-1.  Ensure you are in the `examples/triton` directory.
-2.  Install the required dependencies:
-    ```bash
-    pip install torch triton
-    ```
-    *(Note: Triton installation might require specific CUDA versions. Refer to the official Triton documentation if you encounter issues.)*
+Install the CLI using `pip`:
+```bash
+pip install weco
+```
 
-## Optimization Command
+Set up your API key:
+```bash
+export OPENAI_API_KEY="your_key_here"
+```
 
-Run the following command to start the optimization process:
+Install the dependencies of the scripts shown in subsequent sections:
+```bash
+pip install torch triton
+```
+*(Note: Triton installation might require specific CUDA versions. Refer to the official Triton documentation if you encounter issues.)*
 
+## Run Weco
+
+Now run Weco to optimize your code using Triton:
 ```bash
 weco run --source optimize.py \
-         --eval-command "python evaluate.py --solution-path optimize.py" \
-         --metric speedup \
-         --goal maximize \
-         --steps 30 \
-         --model gemini-2.5-pro-exp-03-25 \
-         --additional-instructions "Use triton to optimize the code while ensuring a small max float diff. Maintain the same code format."
+     --eval-command "python evaluate.py --solution-path optimize.py" \
+     --metric speedup \
+     --goal maximize \
+     --steps 30 \
+     --model o4-mini \
+     --additional-instructions "Use triton to optimize the code while ensuring a small max float diff. Maintain the same code format."
 ```
 
 ### Explanation
 
-*   `--source optimize.py`: The PyTorch self-attention implementation to be optimized.
-*   `--eval-command "python evaluate.py --solution-path optimize.py"`: Executes the evaluation script, which benchmarks the `optimize.py` code against a baseline and prints the `speedup`.
-*   `--metric speedup`: The target metric for optimization.
-*   `--goal maximize`: The agent should maximize the speedup.
-*   `--steps 30`: The number of optimization iterations.
-*   `--model gemini-2.5-pro-exp-03-25`: The LLM driving the optimization.
-*   `--additional-instructions "..."`: Provides specific guidance to the LLM, instructing it to use Triton, maintain numerical accuracy ("small max float diff"), and preserve the code structure.
+*   `--source optimize.py`: Specifies the PyTorch self-attention implementation (`optimize.py`) that Weco will optimize.
+*   `--eval-command "python evaluate.py --solution-path optimize.py"`: Defines the command to execute the evaluation script. This script benchmarks the generated solution in `optimize.py` against a baseline and outputs the `speedup`.
+*   `--metric speedup`: Sets the metric Weco should focus on improving during optimization.
+*   `--goal maximize`: Instructs Weco to aim for the highest possible speedup value.
+*   `--steps 30`: Determines the number of optimization iterations Weco will perform.
+*   `--model o4-mini`: Specifies the large language model to drive the optimization process.
+*   `--additional-instructions "..."`: Provides specific guidance to the LLM. In this case, it directs the model to use Triton for optimization, ensure the numerical difference ("max float diff") between the original and optimized code remains small, and keep the overall code structure consistent.
 
-Weco will iteratively refine `optimize.py` using Triton, guided by the evaluation results and the provided instructions.
+Weco will iteratively modify `optimize.py`, incorporating Triton kernels, guided by the performance feedback (`speedup`) from the evaluation script and the instructions provided.

@@ -23,6 +23,32 @@ def read_api_keys_from_env() -> Dict[str, Any]:
     return keys
 
 
+def determine_default_model(llm_api_keys: Dict[str, Any]) -> str:
+    """Determine the default model based on available API keys.
+
+    Uses priority: OpenAI > Anthropic > Gemini
+
+    Args:
+        llm_api_keys: Dictionary of available LLM API keys
+
+    Returns:
+        str: The default model name to use
+
+    Raises:
+        ValueError: If no LLM API keys are found
+    """
+    if "OPENAI_API_KEY" in llm_api_keys:
+        return "o4-mini"
+    elif "ANTHROPIC_API_KEY" in llm_api_keys:
+        return "claude-sonnet-4-0"
+    elif "GEMINI_API_KEY" in llm_api_keys:
+        return "gemini-2.5-pro"
+    else:
+        raise ValueError(
+            "No LLM API keys found in environment. Please set one of the following: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY."
+        )
+
+
 def read_additional_instructions(additional_instructions: str | None) -> str | None:
     """Read additional instructions from a file path string or return the string itself."""
     if additional_instructions is None:
@@ -114,21 +140,23 @@ def run_evaluation(eval_command: str) -> str:
 
 
 # Update Check Function
-def check_for_cli_updates(current_version_str: str):
+def check_for_cli_updates():
     """Checks PyPI for a newer version of the weco package and notifies the user."""
     try:
+        from . import __pkg_version__
+
         pypi_url = "https://pypi.org/pypi/weco/json"
         response = requests.get(pypi_url, timeout=5)  # Short timeout for non-critical check
         response.raise_for_status()
         latest_version_str = response.json()["info"]["version"]
 
-        current_version = parse_version(current_version_str)
+        current_version = parse_version(__pkg_version__)
         latest_version = parse_version(latest_version_str)
 
         if latest_version > current_version:
             yellow_start = "\033[93m"
             reset_color = "\033[0m"
-            message = f"WARNING: New weco version ({latest_version_str}) available (you have {current_version_str}). Run: pip install --upgrade weco"
+            message = f"WARNING: New weco version ({latest_version_str}) available (you have {__pkg_version__}). Run: pip install --upgrade weco"
             print(f"{yellow_start}{message}{reset_color}")
             time.sleep(2)  # Wait for 2 second
 
