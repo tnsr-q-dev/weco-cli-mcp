@@ -46,3 +46,9 @@ weco run --source optimize.py \
 *   `--additional-instructions guide.md`: Provides guidance to the LLM on the optimization approach.
 
 Weco will iteratively modify `optimize.py`, generating and integrating CUDA C++ code, guided by the evaluation results and the instructions in `guide.md`.
+
+## Next Steps
+
+Now that you've optimized your code with CUDA kernels, try [Triton Optimization](/examples/triton/README.md) for a higher-level GPU programming approach. If you're more interested in [Model Development](/examples/spaceship-titanic/README.md) or [Prompt Engineering](/examples/prompt/README.md), we've got you covered! 
+
+You can check out our [CLI Reference](https://docs.weco.ai/cli/cli-reference) to learn more about what you can do with the tool.
