@@ -16,7 +16,7 @@ The experiment runs locally, requires only two short Python files and a prompt g
    pip install weco openai datasets
    ```
 
-3. This example uses `o4-mini` via the OpenAI API by default. Set up your API key:
+3. This example uses `o4-mini` via the OpenAI API by default. Create your OpenAI API key [here](https://platform.openai.com/api-keys), then run:
    ```bash
    export OPENAI_API_KEY="your_key_here"
    ```

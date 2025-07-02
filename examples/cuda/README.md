@@ -11,7 +11,7 @@ Install the CLI using `pip`:
 pip install weco
 ```
 
-Set up your API key:
+Create your OpenAI API key [here](https://platform.openai.com/api-keys), then run:
 ```bash
 export OPENAI_API_KEY="your_key_here"
 ```
