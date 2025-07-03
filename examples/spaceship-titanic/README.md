@@ -10,7 +10,7 @@ The goal is to improve the model's `accuracy` metric by optimizing the `train.py
     ```bash
     pip install weco pandas numpy scikit-learn torch xgboost lightgbm catboost
     ```
-3. Set up your API key:
+3. Create your OpenAI API key [here](https://platform.openai.com/api-keys), then run:
     ```bash
     export OPENAI_API_KEY="your_key_here"
     ```
@@ -44,3 +44,7 @@ weco run --source train.py \
 *   `--log-dir .runs/spaceship-titanic`: Specifies the directory where Weco should save logs and results for this run.
 
 Weco will iteratively update the feature engineering or modeling code within `train.py` guided by the evaluation method defined in `evaluate.py`
+
+## Next Steps
+
+With model development covered, you might be curious to see how you can make your AI code run faster, saving you time and more importantly GPU credits. Check out our example on automating kernel engineering in [CUDA](/examples/cuda/README.md) and [Triton](/examples/triton/README.md), or dive into the [CLI Reference](https://docs.weco.ai/cli/cli-reference).

@@ -12,7 +12,7 @@ Install the CLI using `pip`:
 pip install weco
 ```
 
-Set up your API key:
+Create your OpenAI API key [here](https://platform.openai.com/api-keys), then run:
 ```bash
 export OPENAI_API_KEY="your_key_here"
 ```
@@ -47,3 +47,7 @@ weco run --source optimize.py \
 *   `--additional-instructions "..."`: Provides specific guidance to the LLM. In this case, it directs the model to use Triton for optimization, ensure the numerical difference ("max float diff") between the original and optimized code remains small, and keep the overall code structure consistent.
 
 Weco will iteratively modify `optimize.py`, incorporating Triton kernels, guided by the performance feedback (`speedup`) from the evaluation script and the instructions provided.
+
+## Next Steps
+
+After mastering Triton kernels, explore [CUDA Optimization](/examples/cuda/README.md) for even lower-level GPU programming, or check the [CLI Reference](https://docs.weco.ai/cli/cli-reference) to improve the results you get with Weco.

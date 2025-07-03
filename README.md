@@ -49,9 +49,9 @@ The `weco` CLI leverages a tree search approach guided by LLMs to iteratively ex
 
     `weco` requires API keys for the LLMs it uses internally. You **must** provide these keys via environment variables:
 
-    - **OpenAI:** `export OPENAI_API_KEY="your_key_here"` (Create your API key [here](https://platform.openai.com/api-keys))
-    - **Anthropic:** `export ANTHROPIC_API_KEY="your_key_here"` (Create your API key [here](https://console.anthropic.com/settings/keys))
-    - **Google:** `export GEMINI_API_KEY="your_key_here"` (Google AI Studio has a free API usage quota. Create your API key [here](https://aistudio.google.com/apikey) to use `weco` for free.)
+    - **OpenAI:** `export OPENAI_API_KEY="your_key_here"` (Create your OpenAI API key [here](https://platform.openai.com/api-keys))
+    - **Anthropic:** `export ANTHROPIC_API_KEY="your_key_here"` (Create your Anthropic API key [here](https://console.anthropic.com/settings/keys))
+    - **Google:** `export GEMINI_API_KEY="your_key_here"` (Google AI Studio has a free API usage quota. Create your Gemini API key [here](https://aistudio.google.com/apikey) to use `weco` for free.)
 
 ---
 
@@ -228,20 +228,17 @@ Weco will parse this output to extract the numerical value (1.5 in this case) as
 We welcome your contributions! To get started:
 
 1.  **Fork & Clone the Repository:**
-
     ```bash
     git clone https://github.com/WecoAI/weco-cli.git
     cd weco-cli
     ```
 
 2.  **Install Dependencies:**
-
     ```bash
     pip install -e ".[dev]"
     ```
 
 3.  **Create a Feature Branch:**
-
     ```bash
     git checkout -b feature/your-feature-name
     ```
