@@ -50,4 +50,4 @@ Weco will iteratively modify `optimize.py`, incorporating Triton kernels, guided
 
 ## Next Steps
 
-After mastering Triton kernels, explore [CUDA Optimization](/examples/cuda-optimization) for even lower-level GPU programming, or check the [CLI Reference](https://docs.weco.ai/cli/cli-reference) to improve the results you get with Weco.
+After mastering Triton kernels, explore [CUDA Optimization](/examples/cuda/README.md) for even lower-level GPU programming, or check the [CLI Reference](https://docs.weco.ai/cli/cli-reference) to improve the results you get with Weco.
