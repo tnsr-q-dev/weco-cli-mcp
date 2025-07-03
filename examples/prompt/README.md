@@ -65,7 +65,7 @@ Weco then mutates the prompt instructions in `optimize.py`, tries again, and gra
 
 ## Next Steps
 
-Now that you've automated prompt engineering for yourself, check out or guide on [Model Development](/examples/spaceship-titanic/README.md) or [CUDA Kernel Engineering](/examples/cuda/README.md).
+Now that you've automated prompt engineering for yourself, check out our guide on [Model Development](/examples/spaceship-titanic/README.md) or [CUDA Kernel Engineering](/examples/cuda/README.md).
 
 You can check out our [CLI Reference](https://docs.weco.ai/cli/cli-reference) to learn more about what you can do with the tool.
 
