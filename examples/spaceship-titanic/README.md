@@ -47,4 +47,4 @@ Weco will iteratively update the feature engineering or modeling code within `tr
 
 ## Next Steps
 
-With model development covered, you might be curious to see how you can make your AI code run faster, saving you time and more importantly gpu credits. Check out our example on automating kernel engineering in [CUDA](/examples/cuda/README.md) and [Triton](/examples/triton/README.md), or dive into the [CLI Reference](https://docs.weco.ai/cli/cli-reference).
+With model development covered, you might be curious to see how you can make your AI code run faster, saving you time and more importantly GPU credits. Check out our example on automating kernel engineering in [CUDA](/examples/cuda/README.md) and [Triton](/examples/triton/README.md), or dive into the [CLI Reference](https://docs.weco.ai/cli/cli-reference).
