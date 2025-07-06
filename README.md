@@ -6,10 +6,11 @@
 </div>
 
 [![Python](https://img.shields.io/badge/Python-3.8.0+-blue)](https://www.python.org)
+[![PyPI version](https://img.shields.io/pypi/v/weco?label=PyPI%20version&color=f05138&labelColor=555555)](https://badge.fury.io/py/weco)
 [![docs](https://img.shields.io/website?url=https://docs.weco.ai/&label=docs)](https://docs.weco.ai/)
-[![PyPI version](https://badge.fury.io/py/weco.svg)](https://badge.fury.io/py/weco)
-[![AIDE](https://img.shields.io/badge/AI--Driven_Exploration-arXiv-orange?style=flat-square&logo=arxiv)](https://arxiv.org/abs/2502.13138)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/WecoAI/weco-cli/blob/main/examples/hello-kernel-world/colab_notebook_walkthrough.ipynb)
+[![PyPI Downloads](https://static.pepy.tech/badge/weco?color=4c1)](https://pepy.tech/projects/weco)
+[![arXiv on AIDE](https://img.shields.io/badge/arXiv-AIDE-b31b1b?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2502.13138)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg?labelColor=ffffff&color=F17E01)](https://colab.research.google.com/github/WecoAI/weco-cli/blob/main/examples/hello-kernel-world/colab_notebook_walkthrough.ipynb)
 
 `pip install weco`
 
