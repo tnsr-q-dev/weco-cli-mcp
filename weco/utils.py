@@ -157,20 +157,21 @@ def truncate_output(output: str, max_lines: int = DEFAULT_MAX_LINES, max_chars: 
     return output
 
 
-def run_evaluation(eval_command: str) -> str:
+def run_evaluation(eval_command: str, timeout: int | None = None) -> str:
     """Run the evaluation command on the code and return the output."""
 
     # Run the eval command as is
-    result = subprocess.run(eval_command, shell=True, capture_output=True, text=True, check=False)
-
-    # Combine stdout and stderr for complete output
-    output = result.stderr if result.stderr else ""
-    if result.stdout:
-        if len(output) > 0:
-            output += "\n"
-        output += result.stdout
-
-    return truncate_output(output)
+    try:
+        result = subprocess.run(eval_command, shell=True, capture_output=True, text=True, check=False, timeout=timeout)
+        # Combine stdout and stderr for complete output
+        output = result.stderr if result.stderr else ""
+        if result.stdout:
+            if len(output) > 0:
+                output += "\n"
+            output += result.stdout
+        return truncate_output(output)
+    except subprocess.TimeoutExpired:
+        return f"Evaluation timed out after {'an unspecified duration' if timeout is None else f'{timeout} seconds'}."
 
 
 # Update Check Function

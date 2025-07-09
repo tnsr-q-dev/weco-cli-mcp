@@ -61,6 +61,12 @@ def configure_run_parser(run_parser: argparse.ArgumentParser) -> None:
         type=str,
         help="Description of additional instruction or path to a file containing additional instructions. Defaults to None.",
     )
+    run_parser.add_argument(
+        "--eval-timeout",
+        type=int,
+        default=None,
+        help="Timeout in seconds for each evaluation. No timeout by default. Example: --eval-timeout 3600",
+    )
 
 
 def execute_run_command(args: argparse.Namespace) -> None:
@@ -77,6 +83,7 @@ def execute_run_command(args: argparse.Namespace) -> None:
         log_dir=args.log_dir,
         additional_instructions=args.additional_instructions,
         console=console,
+        eval_timeout=args.eval_timeout,
     )
     exit_code = 0 if success else 1
     sys.exit(exit_code)

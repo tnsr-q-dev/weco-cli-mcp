@@ -37,6 +37,7 @@ from .utils import (
     smooth_update,
     format_number,
 )
+from .constants import DEFAULT_API_TIMEOUT
 
 
 # --- Heartbeat Sender Class ---
@@ -78,6 +79,7 @@ def execute_optimization(
     log_dir: str = ".runs",
     additional_instructions: Optional[str] = None,
     console: Optional[Console] = None,
+    eval_timeout: Optional[int] = None,
 ) -> bool:
     """
     Execute the core optimization logic.
@@ -153,7 +155,7 @@ def execute_optimization(
             "debug_prob": 0.5,
             "max_debug_depth": max(1, math.ceil(0.1 * steps)),
         }
-        timeout = 800
+        api_timeout = DEFAULT_API_TIMEOUT
         processed_additional_instructions = read_additional_instructions(additional_instructions=additional_instructions)
         source_fp = pathlib.Path(source)
         source_code = read_from_path(fp=source_fp, is_json=False)
@@ -181,7 +183,7 @@ def execute_optimization(
             additional_instructions=processed_additional_instructions,
             api_keys=llm_api_keys,
             auth_headers=auth_headers,
-            timeout=timeout,
+            timeout=api_timeout,
         )
         run_id = run_response["run_id"]
         current_run_id_for_heartbeat = run_id
@@ -248,7 +250,7 @@ def execute_optimization(
             )
 
             # Run evaluation on the initial solution
-            term_out = run_evaluation(eval_command=eval_command)
+            term_out = run_evaluation(eval_command=eval_command, timeout=eval_timeout)
             # Update the evaluation output panel
             eval_output_panel.update(output=term_out)
             smooth_update(
@@ -265,7 +267,7 @@ def execute_optimization(
                 if run_id:
                     try:
                         current_status_response = get_optimization_run_status(
-                            run_id=run_id, include_history=False, timeout=30, auth_headers=auth_headers
+                            run_id=run_id, include_history=False, timeout=(10, 30), auth_headers=auth_headers
                         )
                         current_run_status_val = current_status_response.get("status")
                         if current_run_status_val == "stopping":
@@ -284,14 +286,14 @@ def execute_optimization(
                     additional_instructions=current_additional_instructions,
                     api_keys=llm_api_keys,
                     auth_headers=auth_headers,
-                    timeout=timeout,
+                    timeout=api_timeout,
                 )
                 # Save next solution (.runs/<run-id>/step_<step>.<extension>)
                 write_to_path(fp=runs_dir / f"step_{step}{source_fp.suffix}", content=eval_and_next_solution_response["code"])
                 # Write the next solution to the source file
                 write_to_path(fp=source_fp, content=eval_and_next_solution_response["code"])
                 status_response = get_optimization_run_status(
-                    run_id=run_id, include_history=True, timeout=timeout, auth_headers=auth_headers
+                    run_id=run_id, include_history=True, timeout=api_timeout, auth_headers=auth_headers
                 )
                 # Update the step of the progress bar, token counts, plan and metric tree
                 summary_panel.set_step(step=step)
@@ -347,7 +349,7 @@ def execute_optimization(
                     ],
                     transition_delay=0.08,  # Slightly longer delay for more noticeable transitions
                 )
-                term_out = run_evaluation(eval_command=eval_command)
+                term_out = run_evaluation(eval_command=eval_command, timeout=eval_timeout)
                 eval_output_panel.update(output=term_out)
                 smooth_update(
                     live=live,
@@ -365,13 +367,13 @@ def execute_optimization(
                     execution_output=term_out,
                     additional_instructions=current_additional_instructions,
                     api_keys=llm_api_keys,
-                    timeout=timeout,
+                    timeout=api_timeout,
                     auth_headers=auth_headers,
                 )
                 summary_panel.set_step(step=steps)
                 summary_panel.update_token_counts(usage=eval_and_next_solution_response["usage"])
                 status_response = get_optimization_run_status(
-                    run_id=run_id, include_history=True, timeout=timeout, auth_headers=auth_headers
+                    run_id=run_id, include_history=True, timeout=api_timeout, auth_headers=auth_headers
                 )
                 # No need to update the plan panel since we have finished the optimization
                 # Get the optimization run status for
