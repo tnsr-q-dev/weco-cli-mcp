@@ -73,4 +73,5 @@ digest.txt
 *.pyc
 
 # Repomix
+.repomixignore
 repomix-output.*
