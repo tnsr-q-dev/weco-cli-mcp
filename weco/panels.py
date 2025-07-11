@@ -30,7 +30,7 @@ def hyperlink_button(label: str, target: str | Path, *, colour: str = "blue", bo
     # Build clickable text: optional extra spaces give you a pill look
     text = Text(
         f"{' ' * inner_pad}{label}{' ' * inner_pad}",
-        style=Style(bgcolor=colour, color="white", bold=bold, link=target, underline=True, underline2=True),
+        style=Style(bgcolor=colour, color="white", bold=bold, link=target),
         no_wrap=True,
         overflow="clip",
         justify="center",
@@ -129,8 +129,7 @@ class SummaryPanel:
             f"[bold cyan] {self.model}:[/] "
             f"↑[yellow]{format_number(self.total_input_tokens)}[/] "
             f"↓[yellow]{format_number(self.total_output_tokens)}[/] = "
-            f"[green]{format_number(self.total_input_tokens + self.total_output_tokens)}[/]"
-            f"[bold] • Tokens[/]"
+            f"[green]{format_number(self.total_input_tokens + self.total_output_tokens)} Tokens[/]"
         )
         summary_table.add_row(token_info, Align.right(self.progress))
         summary_table.add_row("")
