@@ -186,6 +186,7 @@ def execute_optimization(
             timeout=api_timeout,
         )
         run_id = run_response["run_id"]
+        run_name = run_response["run_name"]
         current_run_id_for_heartbeat = run_id
 
         # --- Start Heartbeat Thread ---
@@ -205,7 +206,9 @@ def execute_optimization(
             write_to_path(fp=source_fp, content=run_response["code"])
 
             # Update the panels with the initial solution
-            summary_panel.set_run_id(run_id=run_id)  # Add run id now that we have it
+            # Add run id and run name now that we have it
+            summary_panel.set_run_id(run_id=run_id)
+            summary_panel.set_run_name(run_name=run_name)
             # Set the step of the progress bar
             summary_panel.set_step(step=0)
             # Update the token counts

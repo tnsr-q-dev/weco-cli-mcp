@@ -14,7 +14,7 @@ from .__init__ import __dashboard_url__
 class SummaryPanel:
     """Holds a summary of the optimization run."""
 
-    def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, runs_dir: str, run_id: str = None):
+    def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, runs_dir: str, run_id: str = None, run_name: str = None):
         self.maximize = maximize
         self.metric_name = metric_name
         self.goal = ("Maximizing" if self.maximize else "Minimizing") + f" {self.metric_name}..."
@@ -24,6 +24,7 @@ class SummaryPanel:
         self.model = model
         self.runs_dir = runs_dir
         self.run_id = run_id if run_id is not None else "N/A"
+        self.run_name = run_name if run_name is not None else "N/A"
         self.dashboard_url = "N/A"
         self.progress = Progress(
             TextColumn("[progress.description]{task.description}"),
@@ -39,6 +40,10 @@ class SummaryPanel:
         """Set the run ID."""
         self.run_id = run_id
         self.set_dashboard_url(run_id=run_id)
+
+    def set_run_name(self, run_name: str):
+        """Set the run name."""
+        self.run_name = run_name
 
     def set_dashboard_url(self, run_id: str):
         """Set the dashboard URL."""
@@ -60,6 +65,8 @@ class SummaryPanel:
         layout = Layout(name="summary")
         summary_table = Table(show_header=False, box=None, padding=(0, 1))
 
+        # Run name
+        summary_table.add_row(f"[bold cyan]Run Name:[/] {self.run_name}")
         summary_table.add_row("")
         # Goal
         if final_message is not None:
@@ -67,18 +74,15 @@ class SummaryPanel:
         else:
             summary_table.add_row(f"[bold cyan]Goal:[/] {self.goal}")
         summary_table.add_row("")
-        # Model used
-        summary_table.add_row(f"[bold cyan]Model:[/] {self.model}")
+        # Dashboard link
+        summary_table.add_row(f"[bold cyan]Dashboard:[/] [blue underline]{self.dashboard_url}[/]")
         summary_table.add_row("")
         # Log directory
         summary_table.add_row(f"[bold cyan]Logs:[/] [blue underline]{self.runs_dir}/{self.run_id}[/]")
         summary_table.add_row("")
-        # Dashboard link
-        summary_table.add_row(f"[bold cyan]Dashboard:[/] [blue underline]{self.dashboard_url}[/]")
-        summary_table.add_row("")
         # Token counts
         summary_table.add_row(
-            f"[bold cyan]Tokens:[/] ↑[yellow]{format_number(self.total_input_tokens)}[/] ↓[yellow]{format_number(self.total_output_tokens)}[/] = [green]{format_number(self.total_input_tokens + self.total_output_tokens)}[/]"
+            f"[bold cyan]{self.model} Tokens:[/] ↑[yellow]{format_number(self.total_input_tokens)}[/] ↓[yellow]{format_number(self.total_output_tokens)}[/] = [green]{format_number(self.total_input_tokens + self.total_output_tokens)}[/]"
         )
         summary_table.add_row("")
         # Progress bar
