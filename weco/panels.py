@@ -4,12 +4,52 @@ from rich.progress import BarColumn, Progress, TextColumn
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.syntax import Syntax
+from rich.text import Text
+from rich.style import Style
+from rich.columns import Columns
 from rich import box
 from typing import Dict, List, Optional, Union, Tuple
 from .utils import format_number
-import pathlib
+from pathlib import Path
 from .__init__ import __dashboard_url__
 
+
+def hyperlink_button(
+    label: str,
+    target: str | Path,
+    *,
+    colour: str = "blue",
+    bold: bool = True,
+    inner_pad: int = 1,
+) -> Panel:
+    """
+    A rounded “button” whose total width is just the label length (+ borders).
+
+    label      - Visible text on the button (no extra spaces required).
+    target     - HTTP/HTTPS string or pathlib.Path (converted to file:// URI).
+    colour     - Border & background colour.
+    bold       - Boldface the label?
+    inner_pad  - Spaces on either side of the label *inside* the pill.
+    """
+    if isinstance(target, Path):
+        target = target.expanduser().resolve().as_uri()
+
+    # Build clickable text: optional extra spaces give you a pill look
+    text = Text(
+        f"{' ' * inner_pad}{label}{' ' * inner_pad}",
+        style=Style(bgcolor=colour, color="white", bold=bold, link=target),
+        no_wrap=True,
+        overflow="clip",
+        justify="center",
+    )
+
+    return Panel(
+        text,
+        padding=(0, 1),
+        box=box.ROUNDED,
+        border_style=colour,
+        expand=False,
+    )
 
 class SummaryPanel:
     """Holds a summary of the optimization run."""
@@ -17,7 +57,7 @@ class SummaryPanel:
     def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, runs_dir: str, run_id: str = None, run_name: str = None):
         self.maximize = maximize
         self.metric_name = metric_name
-        self.goal = ("Maximizing" if self.maximize else "Minimizing") + f" {self.metric_name}..."
+        self.goal = ("maximizing" if self.maximize else "minimizing") + f" {self.metric_name}"
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         self.total_steps = total_steps
@@ -65,24 +105,19 @@ class SummaryPanel:
         layout = Layout(name="summary")
         summary_table = Table(show_header=False, box=None, padding=(0, 1))
 
-        # Run name
-        summary_table.add_row(f"[bold cyan]Run Name:[/] {self.run_name}")
-        summary_table.add_row("")
         # Goal
         if final_message is not None:
             summary_table.add_row(f"[bold cyan]Result:[/] {final_message}")
-        else:
-            summary_table.add_row(f"[bold cyan]Goal:[/] {self.goal}")
-        summary_table.add_row("")
+            summary_table.add_row("")
         # Dashboard link
-        summary_table.add_row(f"[bold cyan]Dashboard:[/] [blue underline]{self.dashboard_url}[/]")
-        summary_table.add_row("")
+        dashboard_button = hyperlink_button("Dashboard", self.dashboard_url, colour="blue")
         # Log directory
-        summary_table.add_row(f"[bold cyan]Logs:[/] [blue underline]{self.runs_dir}/{self.run_id}[/]")
+        logs_button = hyperlink_button("Logs", Path(self.runs_dir) / self.run_id, colour="bright_black")
+        summary_table.add_row(Columns([dashboard_button, logs_button], expand=False, equal=False))
         summary_table.add_row("")
         # Token counts
         summary_table.add_row(
-            f"[bold cyan]{self.model} Tokens:[/] ↑[yellow]{format_number(self.total_input_tokens)}[/] ↓[yellow]{format_number(self.total_output_tokens)}[/] = [green]{format_number(self.total_input_tokens + self.total_output_tokens)}[/]"
+            f"[bold cyan]{self.model}:[/] ↑[yellow]{format_number(self.total_input_tokens)}[/] ↓[yellow]{format_number(self.total_output_tokens)}[/] = [green]{format_number(self.total_input_tokens + self.total_output_tokens)}[/][bold] • Tokens[/]"
         )
         summary_table.add_row("")
         # Progress bar
@@ -91,7 +126,7 @@ class SummaryPanel:
         # Update layout
         layout.update(summary_table)
 
-        return Panel(layout, title="[bold]📊 Summary", border_style="magenta", expand=True, padding=(0, 1))
+        return Panel(layout, title=f"[bold]📊 Run: {self.run_name} ({self.goal})", border_style="magenta", expand=True, padding=(0, 1))
 
 
 class PlanPanel:
@@ -290,7 +325,7 @@ class EvaluationOutputPanel:
 class SolutionPanels:
     """Displays the current and best solutions side by side."""
 
-    def __init__(self, metric_name: str, source_fp: pathlib.Path):
+    def __init__(self, metric_name: str, source_fp: Path):
         # Current solution
         self.current_node = None
         # Best solution
@@ -300,7 +335,7 @@ class SolutionPanels:
         # Determine the lexer for the source file
         self.lexer = self._determine_lexer(source_fp)
 
-    def _determine_lexer(self, source_fp: pathlib.Path) -> str:
+    def _determine_lexer(self, source_fp: Path) -> str:
         """Determine the lexer for the source file."""
         return Syntax.from_path(source_fp).lexer
 
