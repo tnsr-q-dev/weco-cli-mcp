@@ -15,7 +15,7 @@ def _get_weco_session() -> requests.Session:
     session = requests.Session()
     retry_strategy = Retry(
         total=3,
-        status_forcelist=[429, 500, 502, 503, 504],  # Retry on these server errors and rate limiting
+        status_forcelist=[429],  # Retry on these server errors and rate limiting
         allowed_methods=["HEAD", "GET", "PUT", "POST", "DELETE", "OPTIONS"],  # Case-insensitive
         backoff_factor=1,  # e.g., sleep for 0s, 2s, 4s between retries (factor * (2 ** ({number of total retries} - 1)))
     )
