@@ -6,7 +6,7 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.text import Text
 from rich.style import Style
-from rich.columns import Columns
+from rich.align import Align
 from rich import box
 from typing import Dict, List, Optional, Union, Tuple
 from .utils import format_number
@@ -14,14 +14,7 @@ from pathlib import Path
 from .__init__ import __dashboard_url__
 
 
-def hyperlink_button(
-    label: str,
-    target: str | Path,
-    *,
-    colour: str = "blue",
-    bold: bool = True,
-    inner_pad: int = 1,
-) -> Panel:
+def hyperlink_button(label: str, target: str | Path, *, colour: str = "blue", bold: bool = True, inner_pad: int = 1) -> Panel:
     """
     A rounded “button” whose total width is just the label length (+ borders).
 
@@ -37,24 +30,28 @@ def hyperlink_button(
     # Build clickable text: optional extra spaces give you a pill look
     text = Text(
         f"{' ' * inner_pad}{label}{' ' * inner_pad}",
-        style=Style(bgcolor=colour, color="white", bold=bold, link=target),
+        style=Style(bgcolor=colour, color="white", bold=bold, link=target, underline=True, underline2=True),
         no_wrap=True,
         overflow="clip",
         justify="center",
     )
 
-    return Panel(
-        text,
-        padding=(0, 1),
-        box=box.ROUNDED,
-        border_style=colour,
-        expand=False,
-    )
+    return Panel(text, padding=(0, 1), box=box.ROUNDED, border_style=colour, expand=False)
+
 
 class SummaryPanel:
     """Holds a summary of the optimization run."""
 
-    def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, runs_dir: str, run_id: str = None, run_name: str = None):
+    def __init__(
+        self,
+        maximize: bool,
+        metric_name: str,
+        total_steps: int,
+        model: str,
+        runs_dir: str,
+        run_id: str = None,
+        run_name: str = None,
+    ):
         self.maximize = maximize
         self.metric_name = metric_name
         self.goal = ("maximizing" if self.maximize else "minimizing") + f" {self.metric_name}"
@@ -66,12 +63,13 @@ class SummaryPanel:
         self.run_id = run_id if run_id is not None else "N/A"
         self.run_name = run_name if run_name is not None else "N/A"
         self.dashboard_url = "N/A"
+        self.thinking_content = ""
         self.progress = Progress(
             TextColumn("[progress.description]{task.description}"),
             BarColumn(bar_width=20),
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             TextColumn("•"),
-            TextColumn("[bold]{task.completed}/{task.total} Steps"),
+            TextColumn("[bold]{task.completed}/{task.total} Steps "),
             expand=False,
         )
         self.task_id = self.progress.add_task("", total=total_steps)
@@ -100,52 +98,73 @@ class SummaryPanel:
         self.total_input_tokens += usage["input_tokens"]
         self.total_output_tokens += usage["output_tokens"]
 
+    def update_thinking(self, thinking: str):
+        """Update the thinking content."""
+        self.thinking_content = thinking
+
+    def clear_thinking(self):
+        """Clear the thinking content."""
+        self.thinking_content = ""
+
     def get_display(self, final_message: Optional[str] = None) -> Panel:
-        """Create a summary panel with the relevant information."""
-        layout = Layout(name="summary")
-        summary_table = Table(show_header=False, box=None, padding=(0, 1))
+        """Return a Rich panel summarising the current run."""
+        # ───────────────────── summary grid ──────────────────────
+        summary_table = Table.grid(expand=True, padding=(0, 1))
+        summary_table.add_column(ratio=1)
+        summary_table.add_column(justify="right")
 
-        # Goal
         if final_message is not None:
-            summary_table.add_row(f"[bold cyan]Result:[/] {final_message}")
-            summary_table.add_row("")
-        # Dashboard link
-        dashboard_button = hyperlink_button("Dashboard", self.dashboard_url, colour="blue")
-        # Log directory
-        logs_button = hyperlink_button("Logs", Path(self.runs_dir) / self.run_id, colour="bright_black")
-        summary_table.add_row(Columns([dashboard_button, logs_button], expand=False, equal=False))
+            # Add the final message
+            summary_table.add_row(f"[bold cyan]Result:[/] {final_message}", "")
+            summary_table.add_row("")  # spacer line
+
+        # Row 1 – buttons
+        dashboard_button = hyperlink_button("▶︎ Open Dashboard", self.dashboard_url, colour="cyan")
+        logs_button = hyperlink_button("▶︎ Open Logs", Path(self.runs_dir) / self.run_id, colour="yellow")
+        summary_table.add_row(dashboard_button, Align.right(logs_button))
         summary_table.add_row("")
-        # Token counts
-        summary_table.add_row(
-            f"[bold cyan]{self.model}:[/] ↑[yellow]{format_number(self.total_input_tokens)}[/] ↓[yellow]{format_number(self.total_output_tokens)}[/] = [green]{format_number(self.total_input_tokens + self.total_output_tokens)}[/][bold] • Tokens[/]"
+
+        # Row 2 – token info + progress bar
+        token_info = (
+            f"[bold cyan] {self.model}:[/] "
+            f"↑[yellow]{format_number(self.total_input_tokens)}[/] "
+            f"↓[yellow]{format_number(self.total_output_tokens)}[/] = "
+            f"[green]{format_number(self.total_input_tokens + self.total_output_tokens)}[/]"
+            f"[bold] • Tokens[/]"
         )
+        summary_table.add_row(token_info, Align.right(self.progress))
         summary_table.add_row("")
-        # Progress bar
-        summary_table.add_row(self.progress)
 
-        # Update layout
-        layout.update(summary_table)
+        if final_message is not None:
+            # Don't include the thinking section
+            return Panel(
+                summary_table,
+                title=f"[bold]📊 Run: {self.run_name} ({self.goal})",
+                border_style="magenta",
+                expand=True,
+                padding=(0, 1),
+            )
 
-        return Panel(layout, title=f"[bold]📊 Run: {self.run_name} ({self.goal})", border_style="magenta", expand=True, padding=(0, 1))
+        # Include the thinking section
+        layout = Layout(name="summary")
+        layout.split_column(
+            Layout(summary_table, name="main_summary", ratio=1),
+            Layout(
+                Panel(
+                    self.thinking_content or "[dim]No thinking content yet...[/]",
+                    title="[bold]📝 Thinking...",
+                    border_style="cyan",
+                    expand=True,
+                    padding=(0, 1),
+                ),
+                name="thinking_section",
+                ratio=2,
+            ),
+        )
 
-
-class PlanPanel:
-    """Displays the optimization plan with truncation for long plans."""
-
-    def __init__(self):
-        self.plan = ""
-
-    def update(self, plan: str):
-        """Update the plan text."""
-        self.plan = plan
-
-    def clear(self):
-        """Clear the plan text."""
-        self.plan = ""
-
-    def get_display(self) -> Panel:
-        """Create a panel displaying the plan with truncation if needed."""
-        return Panel(self.plan, title="[bold]📝 Thinking...", border_style="cyan", expand=True, padding=(0, 1))
+        return Panel(
+            layout, title=f"[bold]📊 Run: {self.run_name} ({self.goal})", border_style="magenta", expand=True, padding=(0, 1)
+        )
 
 
 class Node:
@@ -385,10 +404,7 @@ def create_optimization_layout() -> Layout:
     )
 
     # Split the top section into left and right
-    layout["top_section"].split_row(Layout(name="left_panels", ratio=1), Layout(name="tree", ratio=1))
-
-    # Split the left panels into summary and thinking
-    layout["left_panels"].split_column(Layout(name="summary", ratio=2), Layout(name="plan", ratio=1))
+    layout["top_section"].split_row(Layout(name="summary", ratio=1), Layout(name="tree", ratio=1))
 
     # Split the middle section into left and right
     layout["middle_section"].split_row(Layout(name="current_solution", ratio=1), Layout(name="best_solution", ratio=1))

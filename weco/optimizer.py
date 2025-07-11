@@ -20,7 +20,6 @@ from .api import (
 from .auth import handle_authentication
 from .panels import (
     SummaryPanel,
-    PlanPanel,
     Node,
     MetricTreePanel,
     EvaluationOutputPanel,
@@ -162,7 +161,6 @@ def execute_optimization(
 
         # --- Panel Initialization ---
         summary_panel = SummaryPanel(maximize=maximize, metric_name=metric, total_steps=steps, model=model, runs_dir=log_dir)
-        plan_panel = PlanPanel()
         solution_panels = SolutionPanels(metric_name=metric, source_fp=source_fp)
         eval_output_panel = EvaluationOutputPanel()
         tree_panel = MetricTreePanel(maximize=maximize)
@@ -213,7 +211,7 @@ def execute_optimization(
             summary_panel.set_step(step=0)
             # Update the token counts
             summary_panel.update_token_counts(usage=run_response["usage"])
-            plan_panel.update(plan=run_response["plan"])
+            summary_panel.update_thinking(thinking=run_response["plan"])
             # Build the metric tree
             tree_panel.build_metric_tree(
                 nodes=[
@@ -243,7 +241,6 @@ def execute_optimization(
                 layout=layout,
                 sections_to_update=[
                     ("summary", summary_panel.get_display()),
-                    ("plan", plan_panel.get_display()),
                     ("tree", tree_panel.get_display(is_done=False)),
                     ("current_solution", current_solution_panel),
                     ("best_solution", best_solution_panel),
@@ -301,7 +298,7 @@ def execute_optimization(
                 # Update the step of the progress bar, token counts, plan and metric tree
                 summary_panel.set_step(step=step)
                 summary_panel.update_token_counts(usage=eval_and_next_solution_response["usage"])
-                plan_panel.update(plan=eval_and_next_solution_response["plan"])
+                summary_panel.update_thinking(thinking=eval_and_next_solution_response["plan"])
 
                 nodes_list_from_status = status_response.get("nodes")
                 tree_panel.build_metric_tree(nodes=nodes_list_from_status if nodes_list_from_status is not None else [])
@@ -344,7 +341,6 @@ def execute_optimization(
                     layout=layout,
                     sections_to_update=[
                         ("summary", summary_panel.get_display()),
-                        ("plan", plan_panel.get_display()),
                         ("tree", tree_panel.get_display(is_done=False)),
                         ("current_solution", current_solution_panel),
                         ("best_solution", best_solution_panel),
