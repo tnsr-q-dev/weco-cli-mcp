@@ -184,7 +184,9 @@ def main() -> None:
 
         project_path = pathlib.Path(filtered_args[0]) if filtered_args else pathlib.Path.cwd()
         if not project_path.is_dir():
-            console.print(f"[bold red]Error:[/] Path '{project_path}' is not a valid directory.")
+            console.print(
+                f"[bold red]Error:[/] The path '{project_path}' is not a valid directory. Please provide a valid directory path."
+            )
             sys.exit(1)
 
         # Pass the run_parser and model to the chatbot

@@ -35,7 +35,7 @@ def save_api_key(api_key: str):
         # Set file permissions to read/write for owner only (600)
         os.chmod(CREDENTIALS_FILE, stat.S_IRUSR | stat.S_IWUSR)
     except OSError as e:
-        print(f"Error: Could not write credentials file or set permissions on {CREDENTIALS_FILE}: {e}")
+        print(f"Error: Unable to save credentials file or set permissions on {CREDENTIALS_FILE}: {e}")
 
 
 def load_weco_api_key() -> str | None:
@@ -53,7 +53,7 @@ def load_weco_api_key() -> str | None:
             credentials = json.load(f)
             return credentials.get("api_key")
     except (IOError, json.JSONDecodeError, OSError) as e:
-        print(f"Warning: Could not read or parse credentials file at {CREDENTIALS_FILE}: {e}")
+        print(f"Warning: Unable to read credentials file at {CREDENTIALS_FILE}: {e}")
         return None
 
 
@@ -64,7 +64,7 @@ def clear_api_key():
             os.remove(CREDENTIALS_FILE)
             print("Logged out successfully.")
         except OSError as e:
-            print(f"Error: Could not remove credentials file at {CREDENTIALS_FILE}: {e}")
+            print(f"Error: Unable to remove credentials file at {CREDENTIALS_FILE}: {e}")
     else:
         print("Already logged out.")
 
@@ -129,7 +129,9 @@ def perform_login(console: Console):
                             continue  # Continue polling
                         else:
                             # Unexpected 202 response format
-                            console.print(f"\n[bold red]Error:[/] Received unexpected 202 response: {token_data}")
+                            console.print(
+                                f"\n[bold red]Error:[/] Received unexpected response from authentication server: {token_data}"
+                            )
                             return False
                     # Check for standard OAuth2 errors (often 400 Bad Request)
                     elif token_response.status_code == 400:
@@ -146,7 +148,7 @@ def perform_login(console: Console):
                             console.print("\n[bold red]Error:[/] Authorization denied by user.")
                             return False
                         else:  # invalid_grant, etc.
-                            error_desc = token_data.get("error_description", "Unknown error during polling.")
+                            error_desc = token_data.get("error_description", "Unknown authentication error occurred.")
                             console.print(f"\n[bold red]Error:[/] {error_desc} ({error_code})")
                             return False
 

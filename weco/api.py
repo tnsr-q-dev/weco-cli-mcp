@@ -74,15 +74,13 @@ def start_optimization_run(
             )
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.HTTPError as e:
+        except Exception as e:
             handle_api_error(e, console)
-            sys.exit(1)
-        except requests.exceptions.RequestException as e:
-            console.print(f"[bold red]Network Error starting run: {e}[/]")
             sys.exit(1)
 
 
 def evaluate_feedback_then_suggest_next_solution(
+    console: Console,
     run_id: str,
     execution_output: str,
     additional_instructions: str = None,
@@ -105,16 +103,13 @@ def evaluate_feedback_then_suggest_next_solution(
         )
         response.raise_for_status()
         return response.json()
-    except requests.exceptions.HTTPError as e:
-        # Allow caller to handle suggest errors, maybe retry or terminate
-        handle_api_error(e, Console())  # Use default console if none passed
-        raise  # Re-raise the exception
-    except requests.exceptions.RequestException as e:
-        print(f"Network Error during suggest: {e}")  # Use print as console might not be available
-        raise  # Re-raise the exception
+    except Exception as e:
+        handle_api_error(e, console)
+        raise
 
 
 def get_optimization_run_status(
+    console: Console,
     run_id: str,
     include_history: bool = False,
     auth_headers: dict = {},
@@ -128,12 +123,9 @@ def get_optimization_run_status(
         )
         response.raise_for_status()
         return response.json()
-    except requests.exceptions.HTTPError as e:
-        handle_api_error(e, Console())  # Use default console
-        raise  # Re-raise
-    except requests.exceptions.RequestException as e:
-        print(f"Network Error getting status: {e}")
-        raise  # Re-raise
+    except Exception as e:
+        handle_api_error(e, console)
+        raise
 
 
 def send_heartbeat(run_id: str, auth_headers: dict = {}, timeout: Union[int, Tuple[int, int]] = (10, 10)) -> bool:
@@ -145,12 +137,12 @@ def send_heartbeat(run_id: str, auth_headers: dict = {}, timeout: Union[int, Tup
         return True
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 409:
-            print(f"Heartbeat ignored: Run {run_id} is not running.", file=sys.stderr)
+            print("Polling ignore: Run {run_id} is not running.", file=sys.stderr)
         else:
-            print(f"Heartbeat failed for run {run_id}: HTTP {e.response.status_code}", file=sys.stderr)
+            print(f"Polling failed for run {run_id}: HTTP {e.response.status_code}", file=sys.stderr)
         return False
     except requests.exceptions.RequestException as e:
-        print(f"Heartbeat network error for run {run_id}: {e}", file=sys.stderr)
+        print(f"Polling failed for run {run_id}: {e}", file=sys.stderr)
         return False
 
 
@@ -199,7 +191,7 @@ def _determine_model_and_api_key() -> tuple[str, dict[str, str]]:
         api_key_dict = {"GEMINI_API_KEY": llm_api_keys["GEMINI_API_KEY"]}
     else:
         # This should never happen if determine_default_model works correctly
-        raise ValueError(f"Unknown model returned: {model}")
+        raise ValueError(f"Unknown default model choice: {model}")
 
     return model, api_key_dict
 
@@ -232,14 +224,8 @@ def get_optimization_suggestions_from_codebase(
         result = response.json()
         return [option for option in result.get("options", [])]
 
-    except requests.exceptions.HTTPError as e:
-        handle_api_error(e, console)
-        return None
-    except requests.exceptions.RequestException as e:
-        console.print(f"[bold red]Network Error getting optimization suggestions: {e}[/]")
-        return None
     except Exception as e:
-        console.print(f"[bold red]Error calling backend API: {e}[/]")
+        handle_api_error(e, console)
         return None
 
 
@@ -271,14 +257,8 @@ def generate_evaluation_script_and_metrics(
         result = response.json()
         return result.get("script_content"), result.get("metric_name"), result.get("goal"), result.get("reasoning")
 
-    except requests.exceptions.HTTPError as e:
-        handle_api_error(e, console)
-        return None, None, None, None
-    except requests.exceptions.RequestException as e:
-        console.print(f"[bold red]Network Error generating evaluation script: {e}[/]")
-        return None, None, None, None
     except Exception as e:
-        console.print(f"[bold red]Error calling backend API: {e}[/]")
+        handle_api_error(e, console)
         return None, None, None, None
 
 
@@ -313,14 +293,8 @@ def analyze_evaluation_environment(
         response.raise_for_status()
         return response.json()
 
-    except requests.exceptions.HTTPError as e:
-        handle_api_error(e, console)
-        return None
-    except requests.exceptions.RequestException as e:
-        console.print(f"[bold red]Network Error analyzing evaluation environment: {e}[/]")
-        return None
     except Exception as e:
-        console.print(f"[bold red]Error calling backend API: {e}[/]")
+        handle_api_error(e, console)
         return None
 
 
@@ -352,12 +326,6 @@ def analyze_script_execution_requirements(
         result = response.json()
         return result.get("command", f"python {script_path}")
 
-    except requests.exceptions.HTTPError as e:
-        handle_api_error(e, console)
-        return f"python {script_path}"
-    except requests.exceptions.RequestException as e:
-        console.print(f"[bold red]Network Error analyzing script execution: {e}[/]")
-        return f"python {script_path}"
     except Exception as e:
-        console.print(f"[bold red]Error calling backend API: {e}[/]")
-        return f"python {script_path}"
+        handle_api_error(e, console)
+        sys.exit(1)
