@@ -89,18 +89,13 @@ class SummaryPanel:
 
         # Row 1 – hyperlinks
         logs_url = (Path(self.runs_dir) / self.run_id).expanduser().resolve().as_uri()
-        dashboard_link_style = Style(color="blue", link=self.dashboard_url)
-        logs_link_style = Style(color="blue", link=logs_url)
-        # plain_text_style = Style(color="blue")
-        # dashboard_link = Text.assemble((" ▶︎ Open Dashboard", dashboard_link_style), ("", plain_text_style))
-        # logs_link = Text.assemble(("▶︎ Open Logs", logs_link_style), ("", plain_text_style))
         summary_table.add_row(
             Text.assemble(
                 (" ", Style()),
-                ("▶︎ Open Dashboard", dashboard_link_style),
+                ("▶︎ Open Dashboard", Style(color="blue", link=self.dashboard_url)),
                 ("", Style(color="blue")),
                 (" | ", Style()),
-                ("▶︎ Open Logs", logs_link_style),
+                ("▶︎ Open Logs", Style(color="blue", link=logs_url)),
             )
         )
         summary_table.add_row("")
