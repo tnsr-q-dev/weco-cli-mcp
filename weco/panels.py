@@ -6,37 +6,11 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.text import Text
 from rich.style import Style
-from rich.align import Align
 from rich import box
 from typing import Dict, List, Optional, Union, Tuple
 from .utils import format_number
 from pathlib import Path
 from .__init__ import __dashboard_url__
-
-
-def hyperlink_button(label: str, target: str | Path, *, colour: str = "blue", bold: bool = True, inner_pad: int = 1) -> Panel:
-    """
-    A rounded “button” whose total width is just the label length (+ borders).
-
-    label      - Visible text on the button (no extra spaces required).
-    target     - HTTP/HTTPS string or pathlib.Path (converted to file:// URI).
-    colour     - Border & background colour.
-    bold       - Boldface the label?
-    inner_pad  - Spaces on either side of the label *inside* the pill.
-    """
-    if isinstance(target, Path):
-        target = target.expanduser().resolve().as_uri()
-
-    # Build clickable text: optional extra spaces give you a pill look
-    text = Text(
-        f"{' ' * inner_pad}{label}{' ' * inner_pad}",
-        style=Style(bgcolor=colour, color="white", bold=bold, link=target),
-        no_wrap=True,
-        overflow="clip",
-        justify="center",
-    )
-
-    return Panel(text, padding=(0, 1), box=box.ROUNDED, border_style=colour, expand=False)
 
 
 class SummaryPanel:
@@ -54,7 +28,6 @@ class SummaryPanel:
     ):
         self.maximize = maximize
         self.metric_name = metric_name
-        self.goal = ("maximizing" if self.maximize else "minimizing") + f" {self.metric_name}"
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         self.total_steps = total_steps
@@ -94,7 +67,7 @@ class SummaryPanel:
     def update_token_counts(self, usage: Dict[str, int]):
         """Update token counts from usage data."""
         if not isinstance(usage, dict) or "input_tokens" not in usage or "output_tokens" not in usage:
-            raise ValueError("Invalid token usage response from API.")
+            raise ValueError("Invalid token usage data received.")
         self.total_input_tokens += usage["input_tokens"]
         self.total_output_tokens += usage["output_tokens"]
 
@@ -112,17 +85,30 @@ class SummaryPanel:
         summary_table = Table.grid(expand=True, padding=(0, 1))
         summary_table.add_column(ratio=1)
         summary_table.add_column(justify="right")
+        summary_table.add_row("")
+
+        # Row 1 – hyperlinks
+        logs_url = (Path(self.runs_dir) / self.run_id).expanduser().resolve().as_uri()
+        dashboard_link_style = Style(color="blue", link=self.dashboard_url)
+        logs_link_style = Style(color="blue", link=logs_url)
+        # plain_text_style = Style(color="blue")
+        # dashboard_link = Text.assemble((" ▶︎ Open Dashboard", dashboard_link_style), ("", plain_text_style))
+        # logs_link = Text.assemble(("▶︎ Open Logs", logs_link_style), ("", plain_text_style))
+        summary_table.add_row(
+            Text.assemble(
+                (" ", Style()),
+                ("▶︎ Open Dashboard", dashboard_link_style),
+                ("", Style(color="blue")),
+                (" | ", Style()),
+                ("▶︎ Open Logs", logs_link_style),
+            )
+        )
+        summary_table.add_row("")
 
         if final_message is not None:
             # Add the final message
-            summary_table.add_row(f"[bold cyan]Result:[/] {final_message}", "")
-            summary_table.add_row("")  # spacer line
-
-        # Row 1 – buttons
-        dashboard_button = hyperlink_button("▶︎ Open Dashboard", self.dashboard_url, colour="cyan")
-        logs_button = hyperlink_button("▶︎ Open Logs", Path(self.runs_dir) / self.run_id, colour="yellow")
-        summary_table.add_row(dashboard_button, Align.right(logs_button))
-        summary_table.add_row("")
+            summary_table.add_row(f"[bold cyan] Result:[/] {final_message}", "")
+            summary_table.add_row("")
 
         # Row 2 – token info + progress bar
         token_info = (
@@ -131,14 +117,16 @@ class SummaryPanel:
             f"↓[yellow]{format_number(self.total_output_tokens)}[/] = "
             f"[green]{format_number(self.total_input_tokens + self.total_output_tokens)} Tokens[/]"
         )
-        summary_table.add_row(token_info, Align.right(self.progress))
+        summary_table.add_row(token_info)
+        summary_table.add_row("")
+        summary_table.add_row(self.progress)
         summary_table.add_row("")
 
         if final_message is not None:
             # Don't include the thinking section
             return Panel(
                 summary_table,
-                title=f"[bold]📊 Run: {self.run_name} ({self.goal})",
+                title=f"[bold]📊 {'Maximizing' if self.maximize else 'Minimizing'} {self.run_name}",
                 border_style="magenta",
                 expand=True,
                 padding=(0, 1),
@@ -157,12 +145,16 @@ class SummaryPanel:
                     padding=(0, 1),
                 ),
                 name="thinking_section",
-                ratio=2,
+                ratio=1,
             ),
         )
 
         return Panel(
-            layout, title=f"[bold]📊 Run: {self.run_name} ({self.goal})", border_style="magenta", expand=True, padding=(0, 1)
+            layout,
+            title=f"[bold]📊 {'Maximizing' if self.maximize else 'Minimizing'} {self.run_name}",
+            border_style="magenta",
+            expand=True,
+            padding=(0, 1),
         )
 
 
@@ -201,7 +193,7 @@ class MetricTree:
         # Add node to node's parent's children
         if node.parent_id is not None:
             if node.parent_id not in self.nodes:
-                raise ValueError("Could not construct tree: parent node not found.")
+                raise ValueError("Cannot construct optimization tree.")
             self.nodes[node.parent_id].children.append(node)
 
     def get_draft_nodes(self) -> List[Node]:
