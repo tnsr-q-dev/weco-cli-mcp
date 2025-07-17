@@ -4,33 +4,45 @@ from rich.progress import BarColumn, Progress, TextColumn
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.syntax import Syntax
+from rich.text import Text
+from rich.style import Style
 from rich import box
 from typing import Dict, List, Optional, Union, Tuple
 from .utils import format_number
-import pathlib
+from pathlib import Path
 from .__init__ import __dashboard_url__
 
 
 class SummaryPanel:
     """Holds a summary of the optimization run."""
 
-    def __init__(self, maximize: bool, metric_name: str, total_steps: int, model: str, runs_dir: str, run_id: str = None):
+    def __init__(
+        self,
+        maximize: bool,
+        metric_name: str,
+        total_steps: int,
+        model: str,
+        runs_dir: str,
+        run_id: str = None,
+        run_name: str = None,
+    ):
         self.maximize = maximize
         self.metric_name = metric_name
-        self.goal = ("Maximizing" if self.maximize else "Minimizing") + f" {self.metric_name}..."
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         self.total_steps = total_steps
         self.model = model
         self.runs_dir = runs_dir
         self.run_id = run_id if run_id is not None else "N/A"
+        self.run_name = run_name if run_name is not None else "N/A"
         self.dashboard_url = "N/A"
+        self.thinking_content = ""
         self.progress = Progress(
             TextColumn("[progress.description]{task.description}"),
             BarColumn(bar_width=20),
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             TextColumn("•"),
-            TextColumn("[bold]{task.completed}/{task.total} Steps"),
+            TextColumn("[bold]{task.completed}/{task.total} Steps "),
             expand=False,
         )
         self.task_id = self.progress.add_task("", total=total_steps)
@@ -39,6 +51,10 @@ class SummaryPanel:
         """Set the run ID."""
         self.run_id = run_id
         self.set_dashboard_url(run_id=run_id)
+
+    def set_run_name(self, run_name: str):
+        """Set the run name."""
+        self.run_name = run_name
 
     def set_dashboard_url(self, run_id: str):
         """Set the dashboard URL."""
@@ -51,62 +67,90 @@ class SummaryPanel:
     def update_token_counts(self, usage: Dict[str, int]):
         """Update token counts from usage data."""
         if not isinstance(usage, dict) or "input_tokens" not in usage or "output_tokens" not in usage:
-            raise ValueError("Invalid token usage response from API.")
+            raise ValueError("Invalid token usage data received.")
         self.total_input_tokens += usage["input_tokens"]
         self.total_output_tokens += usage["output_tokens"]
 
-    def get_display(self, final_message: Optional[str] = None) -> Panel:
-        """Create a summary panel with the relevant information."""
-        layout = Layout(name="summary")
-        summary_table = Table(show_header=False, box=None, padding=(0, 1))
+    def update_thinking(self, thinking: str):
+        """Update the thinking content."""
+        self.thinking_content = thinking
 
+    def clear_thinking(self):
+        """Clear the thinking content."""
+        self.thinking_content = ""
+
+    def get_display(self, final_message: Optional[str] = None) -> Panel:
+        """Return a Rich panel summarising the current run."""
+        # ───────────────────── summary grid ──────────────────────
+        summary_table = Table.grid(expand=True, padding=(0, 1))
+        summary_table.add_column(ratio=1)
+        summary_table.add_column(justify="right")
         summary_table.add_row("")
-        # Goal
-        if final_message is not None:
-            summary_table.add_row(f"[bold cyan]Result:[/] {final_message}")
-        else:
-            summary_table.add_row(f"[bold cyan]Goal:[/] {self.goal}")
-        summary_table.add_row("")
-        # Model used
-        summary_table.add_row(f"[bold cyan]Model:[/] {self.model}")
-        summary_table.add_row("")
-        # Log directory
-        summary_table.add_row(f"[bold cyan]Logs:[/] [blue underline]{self.runs_dir}/{self.run_id}[/]")
-        summary_table.add_row("")
-        # Dashboard link
-        summary_table.add_row(f"[bold cyan]Dashboard:[/] [blue underline]{self.dashboard_url}[/]")
-        summary_table.add_row("")
-        # Token counts
+
+        # Row 1 – hyperlinks
+        logs_url = (Path(self.runs_dir) / self.run_id).expanduser().resolve().as_uri()
         summary_table.add_row(
-            f"[bold cyan]Tokens:[/] ↑[yellow]{format_number(self.total_input_tokens)}[/] ↓[yellow]{format_number(self.total_output_tokens)}[/] = [green]{format_number(self.total_input_tokens + self.total_output_tokens)}[/]"
+            Text.assemble(
+                (" ", Style()),
+                ("▶︎ Open Dashboard", Style(color="blue", link=self.dashboard_url)),
+                ("", Style(color="blue")),
+                (" | ", Style()),
+                ("▶︎ Open Logs", Style(color="blue", link=logs_url)),
+            )
         )
         summary_table.add_row("")
-        # Progress bar
+
+        if final_message is not None:
+            # Add the final message
+            summary_table.add_row(f"[bold cyan] Result:[/] {final_message}", "")
+            summary_table.add_row("")
+
+        # Row 2 – token info + progress bar
+        token_info = (
+            f"[bold cyan] {self.model}:[/] "
+            f"↑[yellow]{format_number(self.total_input_tokens)}[/] "
+            f"↓[yellow]{format_number(self.total_output_tokens)}[/] = "
+            f"[green]{format_number(self.total_input_tokens + self.total_output_tokens)} Tokens[/]"
+        )
+        summary_table.add_row(token_info)
+        summary_table.add_row("")
         summary_table.add_row(self.progress)
+        summary_table.add_row("")
 
-        # Update layout
-        layout.update(summary_table)
+        if final_message is not None:
+            # Don't include the thinking section
+            return Panel(
+                summary_table,
+                title=f"[bold]📊 {'Maximizing' if self.maximize else 'Minimizing'} {self.run_name}",
+                border_style="magenta",
+                expand=True,
+                padding=(0, 1),
+            )
 
-        return Panel(layout, title="[bold]📊 Summary", border_style="magenta", expand=True, padding=(0, 1))
+        # Include the thinking section
+        layout = Layout(name="summary")
+        layout.split_column(
+            Layout(summary_table, name="main_summary", ratio=1),
+            Layout(
+                Panel(
+                    self.thinking_content or "[dim]No thinking content yet...[/]",
+                    title="[bold]📝 Thinking...",
+                    border_style="cyan",
+                    expand=True,
+                    padding=(0, 1),
+                ),
+                name="thinking_section",
+                ratio=1,
+            ),
+        )
 
-
-class PlanPanel:
-    """Displays the optimization plan with truncation for long plans."""
-
-    def __init__(self):
-        self.plan = ""
-
-    def update(self, plan: str):
-        """Update the plan text."""
-        self.plan = plan
-
-    def clear(self):
-        """Clear the plan text."""
-        self.plan = ""
-
-    def get_display(self) -> Panel:
-        """Create a panel displaying the plan with truncation if needed."""
-        return Panel(self.plan, title="[bold]📝 Thinking...", border_style="cyan", expand=True, padding=(0, 1))
+        return Panel(
+            layout,
+            title=f"[bold]📊 {'Maximizing' if self.maximize else 'Minimizing'} {self.run_name}",
+            border_style="magenta",
+            expand=True,
+            padding=(0, 1),
+        )
 
 
 class Node:
@@ -144,7 +188,7 @@ class MetricTree:
         # Add node to node's parent's children
         if node.parent_id is not None:
             if node.parent_id not in self.nodes:
-                raise ValueError("Could not construct tree: parent node not found.")
+                raise ValueError("Cannot construct optimization tree.")
             self.nodes[node.parent_id].children.append(node)
 
     def get_draft_nodes(self) -> List[Node]:
@@ -286,7 +330,7 @@ class EvaluationOutputPanel:
 class SolutionPanels:
     """Displays the current and best solutions side by side."""
 
-    def __init__(self, metric_name: str, source_fp: pathlib.Path):
+    def __init__(self, metric_name: str, source_fp: Path):
         # Current solution
         self.current_node = None
         # Best solution
@@ -296,7 +340,7 @@ class SolutionPanels:
         # Determine the lexer for the source file
         self.lexer = self._determine_lexer(source_fp)
 
-    def _determine_lexer(self, source_fp: pathlib.Path) -> str:
+    def _determine_lexer(self, source_fp: Path) -> str:
         """Determine the lexer for the source file."""
         return Syntax.from_path(source_fp).lexer
 
@@ -346,10 +390,7 @@ def create_optimization_layout() -> Layout:
     )
 
     # Split the top section into left and right
-    layout["top_section"].split_row(Layout(name="left_panels", ratio=1), Layout(name="tree", ratio=1))
-
-    # Split the left panels into summary and thinking
-    layout["left_panels"].split_column(Layout(name="summary", ratio=2), Layout(name="plan", ratio=1))
+    layout["top_section"].split_row(Layout(name="summary", ratio=1), Layout(name="tree", ratio=1))
 
     # Split the middle section into left and right
     layout["middle_section"].split_row(Layout(name="current_solution", ratio=1), Layout(name="best_solution", ratio=1))

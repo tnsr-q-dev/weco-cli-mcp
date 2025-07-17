@@ -45,7 +45,7 @@ def determine_default_model(llm_api_keys: Dict[str, Any]) -> str:
         return "gemini-2.5-pro"
     else:
         raise ValueError(
-            "No LLM API keys found in environment. Please set one of the following: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY."
+            "No LLM API keys found in environment variables. Please set one of the following: OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY based on your model of choice."
         )
 
 
@@ -84,7 +84,7 @@ def write_to_path(fp: pathlib.Path, content: Union[str, Dict[str, Any]], is_json
         elif isinstance(content, str):
             f.write(content)
         else:
-            raise TypeError("Content must be str or Dict[str, Any]")
+            raise TypeError("Error writing to file. Please verify the file path and try again.")
 
 
 # Visualization helper functions

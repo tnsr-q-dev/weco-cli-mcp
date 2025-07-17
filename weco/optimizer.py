@@ -20,7 +20,6 @@ from .api import (
 from .auth import handle_authentication
 from .panels import (
     SummaryPanel,
-    PlanPanel,
     Node,
     MetricTreePanel,
     EvaluationOutputPanel,
@@ -64,7 +63,7 @@ class HeartbeatSender(threading.Thread):
 
         except Exception as e:
             # Catch any unexpected error in the loop to prevent silent thread death
-            print(f"[ERROR HeartbeatSender] Unhandled exception in run loop for run {self.run_id}: {e}", file=sys.stderr)
+            print(f"[ERROR HeartbeatSender] Unexpected error in heartbeat thread for run {self.run_id}: {e}", file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
             # The loop will break due to the exception, and thread will terminate via finally.
 
@@ -162,7 +161,6 @@ def execute_optimization(
 
         # --- Panel Initialization ---
         summary_panel = SummaryPanel(maximize=maximize, metric_name=metric, total_steps=steps, model=model, runs_dir=log_dir)
-        plan_panel = PlanPanel()
         solution_panels = SolutionPanels(metric_name=metric, source_fp=source_fp)
         eval_output_panel = EvaluationOutputPanel()
         tree_panel = MetricTreePanel(maximize=maximize)
@@ -186,6 +184,7 @@ def execute_optimization(
             timeout=api_timeout,
         )
         run_id = run_response["run_id"]
+        run_name = run_response["run_name"]
         current_run_id_for_heartbeat = run_id
 
         # --- Start Heartbeat Thread ---
@@ -205,12 +204,14 @@ def execute_optimization(
             write_to_path(fp=source_fp, content=run_response["code"])
 
             # Update the panels with the initial solution
-            summary_panel.set_run_id(run_id=run_id)  # Add run id now that we have it
+            # Add run id and run name now that we have it
+            summary_panel.set_run_id(run_id=run_id)
+            summary_panel.set_run_name(run_name=run_name)
             # Set the step of the progress bar
             summary_panel.set_step(step=0)
             # Update the token counts
             summary_panel.update_token_counts(usage=run_response["usage"])
-            plan_panel.update(plan=run_response["plan"])
+            summary_panel.update_thinking(thinking=run_response["plan"])
             # Build the metric tree
             tree_panel.build_metric_tree(
                 nodes=[
@@ -240,7 +241,6 @@ def execute_optimization(
                 layout=layout,
                 sections_to_update=[
                     ("summary", summary_panel.get_display()),
-                    ("plan", plan_panel.get_display()),
                     ("tree", tree_panel.get_display(is_done=False)),
                     ("current_solution", current_solution_panel),
                     ("best_solution", best_solution_panel),
@@ -267,7 +267,7 @@ def execute_optimization(
                 if run_id:
                     try:
                         current_status_response = get_optimization_run_status(
-                            run_id=run_id, include_history=False, timeout=(10, 30), auth_headers=auth_headers
+                            console=console, run_id=run_id, include_history=False, timeout=(10, 30), auth_headers=auth_headers
                         )
                         current_run_status_val = current_status_response.get("status")
                         if current_run_status_val == "stopping":
@@ -275,12 +275,13 @@ def execute_optimization(
                             user_stop_requested_flag = True
                             break
                     except requests.exceptions.RequestException as e:
-                        console.print(f"\n[bold red]Warning: Could not check run status: {e}. Continuing optimization...[/]")
+                        console.print(f"\n[bold red]Warning: Unable to check run status: {e}. Continuing optimization...[/]")
                     except Exception as e:
                         console.print(f"\n[bold red]Warning: Error checking run status: {e}. Continuing optimization...[/]")
 
                 # Send feedback and get next suggestion
                 eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
+                    console=console,
                     run_id=run_id,
                     execution_output=term_out,
                     additional_instructions=current_additional_instructions,
@@ -293,12 +294,12 @@ def execute_optimization(
                 # Write the next solution to the source file
                 write_to_path(fp=source_fp, content=eval_and_next_solution_response["code"])
                 status_response = get_optimization_run_status(
-                    run_id=run_id, include_history=True, timeout=api_timeout, auth_headers=auth_headers
+                    console=console, run_id=run_id, include_history=True, timeout=api_timeout, auth_headers=auth_headers
                 )
                 # Update the step of the progress bar, token counts, plan and metric tree
                 summary_panel.set_step(step=step)
                 summary_panel.update_token_counts(usage=eval_and_next_solution_response["usage"])
-                plan_panel.update(plan=eval_and_next_solution_response["plan"])
+                summary_panel.update_thinking(thinking=eval_and_next_solution_response["plan"])
 
                 nodes_list_from_status = status_response.get("nodes")
                 tree_panel.build_metric_tree(nodes=nodes_list_from_status if nodes_list_from_status is not None else [])
@@ -329,7 +330,9 @@ def execute_optimization(
                                 is_buggy=node_data["is_buggy"],
                             )
                 if current_solution_node is None:
-                    raise ValueError("Current solution node not found in nodes list from status response")
+                    raise ValueError(
+                        "Current solution node not found in the optimization status response. This may indicate a synchronization issue with the backend."
+                    )
 
                 # Update the solution panels with the current and best solution
                 solution_panels.update(current_node=current_solution_node, best_node=best_solution_node)
@@ -341,7 +344,6 @@ def execute_optimization(
                     layout=layout,
                     sections_to_update=[
                         ("summary", summary_panel.get_display()),
-                        ("plan", plan_panel.get_display()),
                         ("tree", tree_panel.get_display(is_done=False)),
                         ("current_solution", current_solution_panel),
                         ("best_solution", best_solution_panel),
@@ -363,6 +365,7 @@ def execute_optimization(
                 current_additional_instructions = read_additional_instructions(additional_instructions=additional_instructions)
                 # Evaluate the final solution thats been generated
                 eval_and_next_solution_response = evaluate_feedback_then_suggest_next_solution(
+                    console=console,
                     run_id=run_id,
                     execution_output=term_out,
                     additional_instructions=current_additional_instructions,
@@ -373,7 +376,7 @@ def execute_optimization(
                 summary_panel.set_step(step=steps)
                 summary_panel.update_token_counts(usage=eval_and_next_solution_response["usage"])
                 status_response = get_optimization_run_status(
-                    run_id=run_id, include_history=True, timeout=api_timeout, auth_headers=auth_headers
+                    console=console, run_id=run_id, include_history=True, timeout=api_timeout, auth_headers=auth_headers
                 )
                 # No need to update the plan panel since we have finished the optimization
                 # Get the optimization run status for

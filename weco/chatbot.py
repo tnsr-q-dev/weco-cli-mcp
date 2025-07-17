@@ -50,7 +50,7 @@ class UserInteractionHelper:
 
                 if attempts >= max_retries:
                     self.console.print(f"[red]Maximum retry attempts ({max_retries}) reached. Exiting.[/]")
-                    raise Exception("Maximum retry attempts exceeded")
+                    raise Exception("Maximum retry attempts exceeded. Please try again.")
 
                 # Show available options without the full prompt
                 if choices:
@@ -66,7 +66,7 @@ class UserInteractionHelper:
                 continue
 
         # This should never be reached due to the exception above, but just in case
-        raise Exception("Unexpected error in choice selection")
+        raise Exception("Unexpected error while selecting a choice")
 
     def get_choice_numeric(self, prompt: str, max_number: int, default: int = None, max_retries: int = 5) -> int:
         """Get numeric choice with validation and error handling."""
@@ -87,7 +87,7 @@ class UserInteractionHelper:
 
                 if attempts >= max_retries:
                     self.console.print(f"[red]Maximum retry attempts ({max_retries}) reached. Exiting.[/]")
-                    raise Exception("Maximum retry attempts exceeded")
+                    raise Exception("Maximum retry attempts exceeded. Please try again.")
 
                 # Show valid range
                 self.console.print(f"Please enter a number between [bold]1[/] and [bold]{max_number}[/]")
@@ -115,7 +115,7 @@ class UserInteractionHelper:
 
                 if attempts >= max_retries:
                     self.console.print(f"[red]Maximum retry attempts ({max_retries}) reached. Exiting.[/]")
-                    raise Exception("Maximum retry attempts exceeded")
+                    raise Exception("Maximum retry attempts exceeded. Please try again.")
 
                 self.console.print("Valid options: [bold]y[/] / [bold]n[/]")
                 if default:
@@ -123,7 +123,7 @@ class UserInteractionHelper:
 
                 continue
 
-        raise Exception("Unexpected error in yes/no selection")
+        raise Exception("Unexpected error while selecting an option")
 
     def display_optimization_options_table(self, options: List[Dict[str, str]]) -> None:
         """Display optimization options in a formatted table."""
@@ -224,7 +224,7 @@ class Chatbot:
                     options = None
 
             if not options or not isinstance(options, list):
-                self.console.print("[red]Failed to get valid optimization options.[/]")
+                self.console.print("[red]Unable to retrieve valid optimization options from the backend.[/]")
                 return None
 
             if not options:
@@ -334,7 +334,9 @@ class Chatbot:
                     if reasoning:
                         self.console.print(f"[dim]Reasoning: {reasoning}[/]")
                 else:
-                    self.console.print("[red]Failed to generate an evaluation script.[/]")
+                    self.console.print(
+                        "[red]Unable to generate an evaluation script. Please try providing a custom script path instead.[/]"
+                    )
                     eval_script_content = None
                     metric_name = None
                     goal = None
@@ -395,7 +397,7 @@ class Chatbot:
             )
 
         if not analysis:
-            self.console.print("[yellow]Failed to analyze evaluation environment. Falling back to generation.[/]")
+            self.console.print("[yellow]Unable to analyze evaluation environment. Falling back to script generation.[/]")
             return self.handle_script_generation_workflow(selected_option)
 
         self.evaluation_analysis = analysis
@@ -711,7 +713,7 @@ class Chatbot:
         """Setup evaluation environment for the selected optimization."""
         eval_config = self.get_evaluation_configuration(selected_option)
         if not eval_config:
-            self.console.print("[red]Evaluation script setup failed.[/]")
+            self.console.print("[red]Evaluation script setup failed. Please check your script configuration and try again.[/]")
             return None
 
         eval_config = self.confirm_and_finalize_evaluation_config(eval_config)
@@ -791,7 +793,7 @@ def run_onboarding_chatbot(
         chatbot = Chatbot(project_path, console, run_parser, model)
         chatbot.start()
     except Exception as e:
-        console.print(f"[bold red]An unexpected error occurred in the chatbot: {e}[/]")
+        console.print(f"[bold red]An unexpected error occurred: {e}[/]")
         import traceback
 
         traceback.print_exc()
