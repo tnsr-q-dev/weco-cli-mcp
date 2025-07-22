@@ -110,6 +110,7 @@ if __name__ == "__main__":
 
     # benchmarking parameters
     n_correctness_trials = 10
+    correctness_tolerance = 1e-5
     n_warmup = 1000
     n_rep = 5000
 
@@ -152,6 +153,8 @@ if __name__ == "__main__":
             max_diff_avg += torch.max(torch.abs(optimized_output - baseline_output))
     max_diff_avg /= n_correctness_trials
     print(f"max float diff between values of baseline and optimized model: {max_diff_avg}")
+    if max_diff_avg > correctness_tolerance:
+        print("invalid solution: max float diff is too high")
 
     # measure performance
     inputs = get_inputs(batch_size=batch_size, seq_len=seq_len, n_embd=n_embd, device="cuda")
