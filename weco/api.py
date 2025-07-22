@@ -1,27 +1,9 @@
 import sys
 from typing import Dict, Any, Optional, Union, Tuple, List
-
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 from rich.console import Console
 
 from weco import __pkg_version__, __base_url__
-
-
-# --- Session Configuration ---
-def _get_weco_session() -> requests.Session:
-    session = requests.Session()
-    retry_strategy = Retry(
-        total=3,
-        status_forcelist=[429, 500, 502, 503, 504],  # Retry on these server errors and rate limiting
-        allowed_methods=["HEAD", "GET", "PUT", "POST", "DELETE", "OPTIONS"],  # Case-insensitive
-        backoff_factor=1,  # e.g., sleep for 0s, 2s, 4s between retries (factor * (2 ** ({number of total retries} - 1)))
-    )
-    adapter = HTTPAdapter(max_retries=retry_strategy)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    return session
 
 
 def handle_api_error(e: requests.exceptions.HTTPError, console: Console) -> None:
@@ -53,8 +35,7 @@ def start_optimization_run(
     """Start the optimization run."""
     with console.status("[bold green]Starting Optimization..."):
         try:
-            session = _get_weco_session()
-            response = session.post(
+            response = requests.post(
                 f"{__base_url__}/runs",
                 json={
                     "source_code": source_code,
@@ -76,8 +57,8 @@ def start_optimization_run(
         except requests.exceptions.HTTPError as e:
             handle_api_error(e, console)
             sys.exit(1)
-        except requests.exceptions.RequestException as e:
-            console.print(f"[bold red]Network Error starting run: {e}[/]")
+        except Exception as e:
+            console.print(f"[bold red]Error starting run: {e}[/]")
             sys.exit(1)
 
 
@@ -91,8 +72,7 @@ def evaluate_feedback_then_suggest_next_solution(
 ) -> Dict[str, Any]:
     """Evaluate the feedback and suggest the next solution."""
     try:
-        session = _get_weco_session()
-        response = session.post(
+        response = requests.post(
             f"{__base_url__}/runs/{run_id}/suggest",
             json={
                 "execution_output": execution_output,
@@ -108,8 +88,8 @@ def evaluate_feedback_then_suggest_next_solution(
         # Allow caller to handle suggest errors, maybe retry or terminate
         handle_api_error(e, Console())  # Use default console if none passed
         raise  # Re-raise the exception
-    except requests.exceptions.RequestException as e:
-        print(f"Network Error during suggest: {e}")  # Use print as console might not be available
+    except Exception as e:
+        print(f"Error: {e}")  # Use print as console might not be available
         raise  # Re-raise the exception
 
 
@@ -118,8 +98,7 @@ def get_optimization_run_status(
 ) -> Dict[str, Any]:
     """Get the current status of the optimization run."""
     try:
-        session = _get_weco_session()
-        response = session.get(
+        response = requests.get(
             f"{__base_url__}/runs/{run_id}", params={"include_history": include_history}, headers=auth_headers, timeout=timeout
         )
         response.raise_for_status()
@@ -127,16 +106,15 @@ def get_optimization_run_status(
     except requests.exceptions.HTTPError as e:
         handle_api_error(e, Console())  # Use default console
         raise  # Re-raise
-    except requests.exceptions.RequestException as e:
-        print(f"Network Error getting status: {e}")
+    except Exception as e:
+        print(f"Error getting run status: {e}")
         raise  # Re-raise
 
 
 def send_heartbeat(run_id: str, auth_headers: dict = {}, timeout: Union[int, Tuple[int, int]] = 10) -> bool:
     """Send a heartbeat signal to the backend."""
     try:
-        session = _get_weco_session()
-        response = session.put(f"{__base_url__}/runs/{run_id}/heartbeat", headers=auth_headers, timeout=timeout)
+        response = requests.put(f"{__base_url__}/runs/{run_id}/heartbeat", headers=auth_headers, timeout=timeout)
         response.raise_for_status()
         return True
     except requests.exceptions.HTTPError as e:
@@ -145,8 +123,8 @@ def send_heartbeat(run_id: str, auth_headers: dict = {}, timeout: Union[int, Tup
         else:
             print(f"Heartbeat failed for run {run_id}: HTTP {e.response.status_code}", file=sys.stderr)
         return False
-    except requests.exceptions.RequestException as e:
-        print(f"Heartbeat network error for run {run_id}: {e}", file=sys.stderr)
+    except Exception as e:
+        print(f"Error sending heartbeat for run {run_id}: {e}", file=sys.stderr)
         return False
 
 
@@ -160,8 +138,7 @@ def report_termination(
 ) -> bool:
     """Report the termination reason to the backend."""
     try:
-        session = _get_weco_session()
-        response = session.post(
+        response = requests.post(
             f"{__base_url__}/runs/{run_id}/terminate",
             json={"status_update": status_update, "termination_reason": reason, "termination_details": details},
             headers=auth_headers,
@@ -169,7 +146,7 @@ def report_termination(
         )
         response.raise_for_status()
         return True
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         print(f"Warning: Failed to report termination to backend for run {run_id}: {e}", file=sys.stderr)
         return False
 
@@ -211,8 +188,7 @@ def get_optimization_suggestions_from_codebase(
     """Analyze codebase and get optimization suggestions using the model-agnostic backend API."""
     try:
         model, api_key_dict = _determine_model_and_api_key()
-        session = _get_weco_session()
-        response = session.post(
+        response = requests.post(
             f"{__base_url__}/onboard/analyze-codebase",
             json={
                 "gitingest_summary": gitingest_summary,
@@ -231,11 +207,8 @@ def get_optimization_suggestions_from_codebase(
     except requests.exceptions.HTTPError as e:
         handle_api_error(e, console)
         return None
-    except requests.exceptions.RequestException as e:
-        console.print(f"[bold red]Network Error getting optimization suggestions: {e}[/]")
-        return None
     except Exception as e:
-        console.print(f"[bold red]Error calling backend API: {e}[/]")
+        console.print(f"[bold red]Error: {e}[/]")
         return None
 
 
@@ -250,8 +223,7 @@ def generate_evaluation_script_and_metrics(
     """Generate evaluation script and determine metrics using the model-agnostic backend API."""
     try:
         model, api_key_dict = _determine_model_and_api_key()
-        session = _get_weco_session()
-        response = session.post(
+        response = requests.post(
             f"{__base_url__}/onboard/generate-script",
             json={
                 "target_file": target_file,
@@ -266,15 +238,11 @@ def generate_evaluation_script_and_metrics(
         response.raise_for_status()
         result = response.json()
         return result.get("script_content"), result.get("metric_name"), result.get("goal"), result.get("reasoning")
-
     except requests.exceptions.HTTPError as e:
         handle_api_error(e, console)
         return None, None, None, None
-    except requests.exceptions.RequestException as e:
-        console.print(f"[bold red]Network Error generating evaluation script: {e}[/]")
-        return None, None, None, None
     except Exception as e:
-        console.print(f"[bold red]Error calling backend API: {e}[/]")
+        console.print(f"[bold red]Error: {e}[/]")
         return None, None, None, None
 
 
@@ -291,8 +259,7 @@ def analyze_evaluation_environment(
     """Analyze existing evaluation scripts and environment using the model-agnostic backend API."""
     try:
         model, api_key_dict = _determine_model_and_api_key()
-        session = _get_weco_session()
-        response = session.post(
+        response = requests.post(
             f"{__base_url__}/onboard/analyze-environment",
             json={
                 "target_file": target_file,
@@ -312,11 +279,8 @@ def analyze_evaluation_environment(
     except requests.exceptions.HTTPError as e:
         handle_api_error(e, console)
         return None
-    except requests.exceptions.RequestException as e:
-        console.print(f"[bold red]Network Error analyzing evaluation environment: {e}[/]")
-        return None
     except Exception as e:
-        console.print(f"[bold red]Error calling backend API: {e}[/]")
+        console.print(f"[bold red]Error: {e}[/]")
         return None
 
 
@@ -331,8 +295,7 @@ def analyze_script_execution_requirements(
     """Analyze script to determine proper execution command using the model-agnostic backend API."""
     try:
         model, api_key_dict = _determine_model_and_api_key()
-        session = _get_weco_session()
-        response = session.post(
+        response = requests.post(
             f"{__base_url__}/onboard/analyze-script",
             json={
                 "script_content": script_content,
@@ -351,9 +314,6 @@ def analyze_script_execution_requirements(
     except requests.exceptions.HTTPError as e:
         handle_api_error(e, console)
         return f"python {script_path}"
-    except requests.exceptions.RequestException as e:
-        console.print(f"[bold red]Network Error analyzing script execution: {e}[/]")
-        return f"python {script_path}"
     except Exception as e:
-        console.print(f"[bold red]Error calling backend API: {e}[/]")
+        console.print(f"[bold red]Error: {e}[/]")
         return f"python {script_path}"
