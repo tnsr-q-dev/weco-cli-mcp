@@ -88,17 +88,14 @@ class SummaryPanel:
         summary_table.add_row("")
 
         # Row 1 – hyperlinks
-        logs_url = (Path(self.runs_dir) / self.run_id).expanduser().resolve().as_uri()
+        logs_url = (Path(self.runs_dir) / self.run_id)
         summary_table.add_row(
-            Text.assemble(
-                (" ", Style()),
-                ("▶︎ Open-Dashboard", Style(color="blue", link=self.dashboard_url)),
-                ("", Style(color="blue")),
-                (" | ", Style()),
-                ("▶︎ Open-Logs", Style(color="blue", link=logs_url)),
-            )
+            f"Dashboard: [underline blue]{self.dashboard_url}[/]",
         )
         summary_table.add_row("")
+        summary_table.add_row(f"Logs: [underline blue]{logs_url}[/]")
+        summary_table.add_row("")
+
 
         if final_message is not None:
             # Add the final message
