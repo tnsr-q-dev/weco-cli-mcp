@@ -154,7 +154,7 @@ class Node:
     """Represents a node in the solution tree."""
 
     def __init__(
-        self, id: str, parent_id: Union[str, None], code: Union[str, None], metric: Union[float, None], is_buggy: bool
+        self, id: str, parent_id: Union[str, None], code: Union[str, None], metric: Union[float, None], is_buggy: Union[bool, None]
     ):
         self.id = id
         self.parent_id = parent_id
@@ -198,7 +198,7 @@ class MetricTree:
             node
             for node in self.nodes.values()
             if node.evaluated  # evaluated
-            and not node.is_buggy  # not buggy
+            and node.is_buggy is False  # not buggy
             and node.metric is not None  # has metric
         ]
         if len(measured_nodes) == 0:

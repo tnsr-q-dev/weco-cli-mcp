@@ -221,7 +221,7 @@ def execute_optimization(
                         "code": run_response["code"],
                         "step": 0,
                         "metric_value": None,
-                        "is_buggy": False,
+                        "is_buggy": None,
                     }
                 ]
             )
@@ -230,7 +230,7 @@ def execute_optimization(
             # Update the solution panels with the initial solution and get the panel displays
             solution_panels.update(
                 current_node=Node(
-                    id=run_response["solution_id"], parent_id=None, code=run_response["code"], metric=None, is_buggy=False
+                    id=run_response["solution_id"], parent_id=None, code=run_response["code"], metric=None, is_buggy=None
                 ),
                 best_node=None,
             )
