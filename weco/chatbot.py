@@ -215,7 +215,10 @@ class Chatbot:
 
             with self.console.status("[bold green]Generating optimization suggestions...[/]"):
                 result = get_optimization_suggestions_from_codebase(
-                    self.gitingest_summary, self.gitingest_tree, self.gitingest_content_str, self.console
+                    console=self.console,
+                    gitingest_summary=self.gitingest_summary,
+                    gitingest_tree=self.gitingest_tree,
+                    gitingest_content_str=self.gitingest_content_str,
                 )
 
                 if result and isinstance(result, list):
@@ -324,10 +327,10 @@ class Chatbot:
             elif action == "g" or action == "r":
                 with self.console.status("[bold green]Generating evaluation script and determining metrics...[/]"):
                     result = generate_evaluation_script_and_metrics(
-                        selected_option["target_file"],
-                        selected_option["description"],
-                        self.gitingest_content_str,
-                        self.console,
+                        console=self.console,
+                        target_file=selected_option["target_file"],
+                        description=selected_option["description"],
+                        gitingest_content_str=self.gitingest_content_str,
                     )
                 if result and result[0]:
                     eval_script_content, metric_name, goal, reasoning = result
@@ -373,7 +376,10 @@ class Chatbot:
         # Analyze the script to determine the proper execution command
         with self.console.status("[bold green]Analyzing script execution requirements...[/]"):
             eval_command = analyze_script_execution_requirements(
-                eval_script_content, eval_script_path_str, selected_option["target_file"], self.console
+                console=self.console,
+                script_content=eval_script_content,
+                script_path=eval_script_path_str,
+                target_file=selected_option["target_file"],
             )
 
         return {
@@ -388,12 +394,12 @@ class Chatbot:
         """Get or create evaluation script configuration using intelligent conversation-guided approach."""
         with self.console.status("[bold green]Analyzing evaluation environment...[/]"):
             analysis = analyze_evaluation_environment(
-                selected_option["target_file"],
-                selected_option["description"],
-                self.gitingest_summary,
-                self.gitingest_tree,
-                self.gitingest_content_str,
-                self.console,
+                console=self.console,
+                target_file=selected_option["target_file"],
+                description=selected_option["description"],
+                gitingest_summary=self.gitingest_summary,
+                gitingest_tree=self.gitingest_tree,
+                gitingest_content_str=self.gitingest_content_str,
             )
 
         if not analysis:
@@ -531,7 +537,10 @@ class Chatbot:
             if not eval_command or eval_command == f"python {script_path}":
                 with self.console.status("[bold green]Analyzing script execution requirements...[/]"):
                     eval_command = analyze_script_execution_requirements(
-                        script_content, script_path, selected_option["target_file"], self.console
+                        console=self.console,
+                        script_content=script_content,
+                        script_path=script_path,
+                        target_file=selected_option["target_file"],
                     )
 
             self.current_step = "confirmation"

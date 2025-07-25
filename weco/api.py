@@ -54,7 +54,13 @@ def start_optimization_run(
                 timeout=timeout,
             )
             response.raise_for_status()
-            return response.json()
+            result = response.json()
+            # Handle None values for code and plan fields
+            if result.get("plan") is None:
+                result["plan"] = ""
+            if result.get("code") is None:
+                result["code"] = ""
+            return result
         except Exception as e:
             handle_api_error(e, console)
             sys.exit(1)
@@ -85,10 +91,17 @@ def evaluate_feedback_then_suggest_next_solution(
             timeout=timeout,
         )
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        # Handle None values for code and plan fields
+        if result.get("plan") is None:
+            result["plan"] = ""
+        if result.get("code") is None:
+            result["code"] = ""
+
+        return result
     except requests.exceptions.HTTPError as e:
         # Allow caller to handle suggest errors, maybe retry or terminate
-        handle_api_error(e, Console())  # Use default console if none passed
+        handle_api_error(e, console)  # Use default console if none passed
         raise  # Re-raise the exception
     except Exception as e:
         print(f"Error: {e}")  # Use print as console might not be available
@@ -108,9 +121,23 @@ def get_optimization_run_status(
             f"{__base_url__}/runs/{run_id}", params={"include_history": include_history}, headers=auth_headers, timeout=timeout
         )
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        # Handle None values for code and plan fields in best_result and nodes
+        if result.get("best_result"):
+            if result["best_result"].get("code") is None:
+                result["best_result"]["code"] = ""
+            if result["best_result"].get("plan") is None:
+                result["best_result"]["plan"] = ""
+        # Handle None values for code and plan fields in nodes array
+        if result.get("nodes"):
+            for i, node in enumerate(result["nodes"]):
+                if node.get("plan") is None:
+                    result["nodes"][i]["plan"] = ""
+                if node.get("code") is None:
+                    result["nodes"][i]["code"] = ""
+        return result
     except requests.exceptions.HTTPError as e:
-        handle_api_error(e, Console())  # Use default console
+        handle_api_error(e, console)  # Use default console
         raise  # Re-raise
     except Exception as e:
         print(f"Error getting run status: {e}")
@@ -184,10 +211,10 @@ def _determine_model_and_api_key() -> tuple[str, dict[str, str]]:
 
 
 def get_optimization_suggestions_from_codebase(
+    console: Console,
     gitingest_summary: str,
     gitingest_tree: str,
     gitingest_content_str: str,
-    console: Console,
     auth_headers: dict = {},
     timeout: Union[int, Tuple[int, int]] = DEFAULT_API_TIMEOUT,
 ) -> Optional[List[Dict[str, Any]]]:
@@ -220,10 +247,10 @@ def get_optimization_suggestions_from_codebase(
 
 
 def generate_evaluation_script_and_metrics(
+    console: Console,
     target_file: str,
     description: str,
     gitingest_content_str: str,
-    console: Console,
     auth_headers: dict = {},
     timeout: Union[int, Tuple[int, int]] = DEFAULT_API_TIMEOUT,
 ) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
@@ -255,12 +282,12 @@ def generate_evaluation_script_and_metrics(
 
 
 def analyze_evaluation_environment(
+    console: Console,
     target_file: str,
     description: str,
     gitingest_summary: str,
     gitingest_tree: str,
     gitingest_content_str: str,
-    console: Console,
     auth_headers: dict = {},
     timeout: Union[int, Tuple[int, int]] = DEFAULT_API_TIMEOUT,
 ) -> Optional[Dict[str, Any]]:
@@ -294,10 +321,10 @@ def analyze_evaluation_environment(
 
 
 def analyze_script_execution_requirements(
+    console: Console,
     script_content: str,
     script_path: str,
     target_file: str,
-    console: Console,
     auth_headers: dict = {},
     timeout: Union[int, Tuple[int, int]] = DEFAULT_API_TIMEOUT,
 ) -> Optional[str]:
