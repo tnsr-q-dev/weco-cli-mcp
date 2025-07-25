@@ -85,11 +85,8 @@ class SummaryPanel:
         summary_table.add_column(justify="right")
         summary_table.add_row("")
 
-        # Row 1 – hyperlinks
-        logs_url = Path(self.runs_dir) / self.run_id
-        summary_table.add_row(f"Dashboard: [underline blue]{self.dashboard_url}[/]")
-        summary_table.add_row("")
-        summary_table.add_row(f"Logs: [underline blue]{logs_url}[/]")
+        # Dashboard url
+        summary_table.add_row(f" Dashboard: [underline blue]{self.dashboard_url}[/]")
         summary_table.add_row("")
 
         if final_message is not None:
@@ -97,7 +94,7 @@ class SummaryPanel:
             summary_table.add_row(f"[bold cyan] Result:[/] {final_message}", "")
             summary_table.add_row("")
 
-        # Row 2 – token info + progress bar
+        # Token info
         token_info = (
             f"[bold cyan] {self.model}:[/] "
             f"↑[yellow]{format_number(self.total_input_tokens)}[/] "
@@ -106,7 +103,14 @@ class SummaryPanel:
         )
         summary_table.add_row(token_info)
         summary_table.add_row("")
+
+        # Progress bar
         summary_table.add_row(self.progress)
+        summary_table.add_row("")
+
+        # Logs url
+        logs_url = Path(self.runs_dir) / self.run_id
+        summary_table.add_row(f" Logs: [underline blue]{logs_url}[/]")
         summary_table.add_row("")
 
         if final_message is not None:
