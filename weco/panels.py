@@ -92,10 +92,10 @@ class SummaryPanel:
         summary_table.add_row(
             Text.assemble(
                 (" ", Style()),
-                ("▶︎ Open Dashboard", Style(color="blue", link=self.dashboard_url)),
+                ("▶︎ Open-Dashboard", Style(color="blue", link=self.dashboard_url)),
                 ("", Style(color="blue")),
                 (" | ", Style()),
-                ("▶︎ Open Logs", Style(color="blue", link=logs_url)),
+                ("▶︎ Open-Logs", Style(color="blue", link=logs_url)),
             )
         )
         summary_table.add_row("")
