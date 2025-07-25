@@ -4,8 +4,6 @@ from rich.progress import BarColumn, Progress, TextColumn
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.syntax import Syntax
-from rich.text import Text
-from rich.style import Style
 from rich import box
 from typing import Dict, List, Optional, Union, Tuple
 from .utils import format_number
@@ -88,14 +86,11 @@ class SummaryPanel:
         summary_table.add_row("")
 
         # Row 1 – hyperlinks
-        logs_url = (Path(self.runs_dir) / self.run_id)
-        summary_table.add_row(
-            f"Dashboard: [underline blue]{self.dashboard_url}[/]",
-        )
+        logs_url = Path(self.runs_dir) / self.run_id
+        summary_table.add_row(f"Dashboard: [underline blue]{self.dashboard_url}[/]")
         summary_table.add_row("")
         summary_table.add_row(f"Logs: [underline blue]{logs_url}[/]")
         summary_table.add_row("")
-
 
         if final_message is not None:
             # Add the final message
@@ -154,7 +149,12 @@ class Node:
     """Represents a node in the solution tree."""
 
     def __init__(
-        self, id: str, parent_id: Union[str, None], code: Union[str, None], metric: Union[float, None], is_buggy: Union[bool, None]
+        self,
+        id: str,
+        parent_id: Union[str, None],
+        code: Union[str, None],
+        metric: Union[float, None],
+        is_buggy: Union[bool, None],
     ):
         self.id = id
         self.parent_id = parent_id
@@ -188,9 +188,12 @@ class MetricTree:
                 raise ValueError("Cannot construct optimization tree.")
             self.nodes[node.parent_id].children.append(node)
 
-    def get_draft_nodes(self) -> List[Node]:
-        """Get all draft nodes from the tree."""
-        return [node for node in self.nodes.values() if node.parent_id is None]
+    def get_root_node(self) -> Node:
+        """Get the root node from the tree."""
+        nodes = [node for node in self.nodes.values() if node.parent_id is None]
+        if len(nodes) != 1:
+            raise ValueError("Cannot construct optimization tree.")
+        return nodes[0]
 
     def get_best_node(self) -> Optional[Node]:
         """Get the best node from the tree."""
@@ -198,7 +201,8 @@ class MetricTree:
             node
             for node in self.nodes.values()
             if node.evaluated  # evaluated
-            and node.is_buggy is False  # not buggy
+            and node.is_buggy
+            is False  # not buggy => is_buggy can exist in 3 states: None (solution has not yet been evaluated for bugs), True (solution has bug), False (solution does not have a bug)
             and node.metric is not None  # has metric
         ]
         if len(measured_nodes) == 0:
@@ -288,8 +292,8 @@ class MetricTreePanel:
                 append_rec(child, subtree)
 
         tree = Tree("", hide_root=True)
-        for n in self.metric_tree.get_draft_nodes():
-            append_rec(n, tree)
+        root_node = self.metric_tree.get_root_node()
+        append_rec(node=root_node, tree=tree)
 
         return tree
 
