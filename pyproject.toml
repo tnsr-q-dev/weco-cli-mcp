@@ -16,6 +16,8 @@ dependencies = [
     "rich",
     "packaging",
     "gitingest",
+    "fastapi",
+    "slowapi",
 ]
 keywords = ["AI", "Code Optimization", "Code Generation"]
 classifiers = [

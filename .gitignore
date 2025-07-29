@@ -69,6 +69,7 @@ etc/
 # AI generated files
 digest.txt
 .runs/
+CLAUDE.md
 
 *.pyc
 
