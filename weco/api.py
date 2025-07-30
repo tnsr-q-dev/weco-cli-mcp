@@ -4,6 +4,7 @@ import requests
 from rich.console import Console
 
 from weco import __pkg_version__, __base_url__
+from .constants import DEFAULT_API_TIMEOUT
 
 
 def handle_api_error(e: requests.exceptions.HTTPError, console: Console) -> None:
@@ -30,7 +31,7 @@ def start_optimization_run(
     additional_instructions: str = None,
     api_keys: Dict[str, Any] = {},
     auth_headers: dict = {},
-    timeout: Union[int, Tuple[int, int]] = 800,
+    timeout: Union[int, Tuple[int, int]] = DEFAULT_API_TIMEOUT,
 ) -> Dict[str, Any]:
     """Start the optimization run."""
     with console.status("[bold green]Starting Optimization..."):
@@ -53,8 +54,14 @@ def start_optimization_run(
                 timeout=timeout,
             )
             response.raise_for_status()
-            return response.json()
-        except requests.exceptions.HTTPError as e:
+            result = response.json()
+            # Handle None values for code and plan fields
+            if result.get("plan") is None:
+                result["plan"] = ""
+            if result.get("code") is None:
+                result["code"] = ""
+            return result
+        except Exception as e:
             handle_api_error(e, console)
             sys.exit(1)
         except Exception as e:
@@ -63,12 +70,13 @@ def start_optimization_run(
 
 
 def evaluate_feedback_then_suggest_next_solution(
+    console: Console,
     run_id: str,
     execution_output: str,
     additional_instructions: str = None,
     api_keys: Dict[str, Any] = {},
     auth_headers: dict = {},
-    timeout: Union[int, Tuple[int, int]] = 800,
+    timeout: Union[int, Tuple[int, int]] = DEFAULT_API_TIMEOUT,
 ) -> Dict[str, Any]:
     """Evaluate the feedback and suggest the next solution."""
     try:
@@ -83,10 +91,17 @@ def evaluate_feedback_then_suggest_next_solution(
             timeout=timeout,
         )
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        # Handle None values for code and plan fields
+        if result.get("plan") is None:
+            result["plan"] = ""
+        if result.get("code") is None:
+            result["code"] = ""
+
+        return result
     except requests.exceptions.HTTPError as e:
         # Allow caller to handle suggest errors, maybe retry or terminate
-        handle_api_error(e, Console())  # Use default console if none passed
+        handle_api_error(e, console)  # Use default console if none passed
         raise  # Re-raise the exception
     except Exception as e:
         print(f"Error: {e}")  # Use print as console might not be available
@@ -94,7 +109,11 @@ def evaluate_feedback_then_suggest_next_solution(
 
 
 def get_optimization_run_status(
-    run_id: str, include_history: bool = False, auth_headers: dict = {}, timeout: Union[int, Tuple[int, int]] = 800
+    console: Console,
+    run_id: str,
+    include_history: bool = False,
+    auth_headers: dict = {},
+    timeout: Union[int, Tuple[int, int]] = DEFAULT_API_TIMEOUT,
 ) -> Dict[str, Any]:
     """Get the current status of the optimization run."""
     try:
@@ -102,16 +121,30 @@ def get_optimization_run_status(
             f"{__base_url__}/runs/{run_id}", params={"include_history": include_history}, headers=auth_headers, timeout=timeout
         )
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        # Handle None values for code and plan fields in best_result and nodes
+        if result.get("best_result"):
+            if result["best_result"].get("code") is None:
+                result["best_result"]["code"] = ""
+            if result["best_result"].get("plan") is None:
+                result["best_result"]["plan"] = ""
+        # Handle None values for code and plan fields in nodes array
+        if result.get("nodes"):
+            for i, node in enumerate(result["nodes"]):
+                if node.get("plan") is None:
+                    result["nodes"][i]["plan"] = ""
+                if node.get("code") is None:
+                    result["nodes"][i]["code"] = ""
+        return result
     except requests.exceptions.HTTPError as e:
-        handle_api_error(e, Console())  # Use default console
+        handle_api_error(e, console)  # Use default console
         raise  # Re-raise
     except Exception as e:
         print(f"Error getting run status: {e}")
         raise  # Re-raise
 
 
-def send_heartbeat(run_id: str, auth_headers: dict = {}, timeout: Union[int, Tuple[int, int]] = 10) -> bool:
+def send_heartbeat(run_id: str, auth_headers: dict = {}, timeout: Union[int, Tuple[int, int]] = (10, 10)) -> bool:
     """Send a heartbeat signal to the backend."""
     try:
         response = requests.put(f"{__base_url__}/runs/{run_id}/heartbeat", headers=auth_headers, timeout=timeout)
@@ -119,9 +152,9 @@ def send_heartbeat(run_id: str, auth_headers: dict = {}, timeout: Union[int, Tup
         return True
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 409:
-            print(f"Heartbeat ignored: Run {run_id} is not running.", file=sys.stderr)
+            print("Polling ignore: Run {run_id} is not running.", file=sys.stderr)
         else:
-            print(f"Heartbeat failed for run {run_id}: HTTP {e.response.status_code}", file=sys.stderr)
+            print(f"Polling failed for run {run_id}: HTTP {e.response.status_code}", file=sys.stderr)
         return False
     except Exception as e:
         print(f"Error sending heartbeat for run {run_id}: {e}", file=sys.stderr)
@@ -134,7 +167,7 @@ def report_termination(
     reason: str,
     details: Optional[str] = None,
     auth_headers: dict = {},
-    timeout: Union[int, Tuple[int, int]] = 30,
+    timeout: Union[int, Tuple[int, int]] = (10, 30),
 ) -> bool:
     """Report the termination reason to the backend."""
     try:
@@ -172,20 +205,21 @@ def _determine_model_and_api_key() -> tuple[str, dict[str, str]]:
         api_key_dict = {"GEMINI_API_KEY": llm_api_keys["GEMINI_API_KEY"]}
     else:
         # This should never happen if determine_default_model works correctly
-        raise ValueError(f"Unknown model returned: {model}")
+        raise ValueError(f"Unknown default model choice: {model}")
 
     return model, api_key_dict
 
 
 def get_optimization_suggestions_from_codebase(
+    console: Console,
     gitingest_summary: str,
     gitingest_tree: str,
     gitingest_content_str: str,
-    console: Console,
     auth_headers: dict = {},
-    timeout: Union[int, Tuple[int, int]] = 800,
+    timeout: Union[int, Tuple[int, int]] = DEFAULT_API_TIMEOUT,
 ) -> Optional[List[Dict[str, Any]]]:
     """Analyze codebase and get optimization suggestions using the model-agnostic backend API."""
+    model, api_key_dict = _determine_model_and_api_key()
     try:
         model, api_key_dict = _determine_model_and_api_key()
         response = requests.post(
@@ -204,7 +238,7 @@ def get_optimization_suggestions_from_codebase(
         result = response.json()
         return [option for option in result.get("options", [])]
 
-    except requests.exceptions.HTTPError as e:
+    except Exception as e:
         handle_api_error(e, console)
         return None
     except Exception as e:
@@ -213,14 +247,15 @@ def get_optimization_suggestions_from_codebase(
 
 
 def generate_evaluation_script_and_metrics(
+    console: Console,
     target_file: str,
     description: str,
     gitingest_content_str: str,
-    console: Console,
     auth_headers: dict = {},
-    timeout: Union[int, Tuple[int, int]] = 800,
+    timeout: Union[int, Tuple[int, int]] = DEFAULT_API_TIMEOUT,
 ) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
     """Generate evaluation script and determine metrics using the model-agnostic backend API."""
+    model, api_key_dict = _determine_model_and_api_key()
     try:
         model, api_key_dict = _determine_model_and_api_key()
         response = requests.post(
@@ -247,16 +282,17 @@ def generate_evaluation_script_and_metrics(
 
 
 def analyze_evaluation_environment(
+    console: Console,
     target_file: str,
     description: str,
     gitingest_summary: str,
     gitingest_tree: str,
     gitingest_content_str: str,
-    console: Console,
     auth_headers: dict = {},
-    timeout: Union[int, Tuple[int, int]] = 800,
+    timeout: Union[int, Tuple[int, int]] = DEFAULT_API_TIMEOUT,
 ) -> Optional[Dict[str, Any]]:
     """Analyze existing evaluation scripts and environment using the model-agnostic backend API."""
+    model, api_key_dict = _determine_model_and_api_key()
     try:
         model, api_key_dict = _determine_model_and_api_key()
         response = requests.post(
@@ -276,7 +312,7 @@ def analyze_evaluation_environment(
         response.raise_for_status()
         return response.json()
 
-    except requests.exceptions.HTTPError as e:
+    except Exception as e:
         handle_api_error(e, console)
         return None
     except Exception as e:
@@ -285,14 +321,15 @@ def analyze_evaluation_environment(
 
 
 def analyze_script_execution_requirements(
+    console: Console,
     script_content: str,
     script_path: str,
     target_file: str,
-    console: Console,
     auth_headers: dict = {},
-    timeout: Union[int, Tuple[int, int]] = 800,
+    timeout: Union[int, Tuple[int, int]] = DEFAULT_API_TIMEOUT,
 ) -> Optional[str]:
     """Analyze script to determine proper execution command using the model-agnostic backend API."""
+    model, api_key_dict = _determine_model_and_api_key()
     try:
         model, api_key_dict = _determine_model_and_api_key()
         response = requests.post(
@@ -311,7 +348,7 @@ def analyze_script_execution_requirements(
         result = response.json()
         return result.get("command", f"python {script_path}")
 
-    except requests.exceptions.HTTPError as e:
+    except Exception as e:
         handle_api_error(e, console)
         return f"python {script_path}"
     except Exception as e:

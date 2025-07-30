@@ -45,7 +45,7 @@ def determine_default_model(llm_api_keys: Dict[str, Any]) -> str:
         return "gemini-2.5-pro"
     else:
         raise ValueError(
-            "No LLM API keys found in environment. Please set one of the following: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY."
+            "No LLM API keys found in environment variables. Please set one of the following: OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY based on your model of choice."
         )
 
 
@@ -84,7 +84,7 @@ def write_to_path(fp: pathlib.Path, content: Union[str, Dict[str, Any]], is_json
         elif isinstance(content, str):
             f.write(content)
         else:
-            raise TypeError("Content must be str or Dict[str, Any]")
+            raise TypeError("Error writing to file. Please verify the file path and try again.")
 
 
 # Visualization helper functions
@@ -124,19 +124,54 @@ def smooth_update(
 
 
 # Other helper functions
-def run_evaluation(eval_command: str) -> str:
+DEFAULT_MAX_LINES = 50
+DEFAULT_MAX_CHARS = 5000
+
+
+def truncate_output(output: str, max_lines: int = DEFAULT_MAX_LINES, max_chars: int = DEFAULT_MAX_CHARS) -> str:
+    """Truncate the output to a reasonable size."""
+    lines = output.splitlines()
+
+    # Determine what truncations are needed based on original output
+    lines_truncated = len(lines) > max_lines
+    chars_truncated = len(output) > max_chars
+
+    # Apply truncations to the original output
+    if lines_truncated:
+        output = "\n".join(lines[-max_lines:])
+
+    if chars_truncated:
+        output = output[-max_chars:]
+
+    # Add prefixes for truncations that were applied
+    prefixes = []
+    if lines_truncated:
+        prefixes.append(f"truncated to last {max_lines} lines")
+    if chars_truncated:
+        prefixes.append(f"truncated to last {max_chars} characters")
+
+    if prefixes:
+        prefix_text = ", ".join(prefixes)
+        output = f"... ({prefix_text})\n{output}"
+
+    return output
+
+
+def run_evaluation(eval_command: str, timeout: int | None = None) -> str:
     """Run the evaluation command on the code and return the output."""
 
     # Run the eval command as is
-    result = subprocess.run(eval_command, shell=True, capture_output=True, text=True, check=False)
-
-    # Combine stdout and stderr for complete output
-    output = result.stderr if result.stderr else ""
-    if result.stdout:
-        if len(output) > 0:
-            output += "\n"
-        output += result.stdout
-    return output
+    try:
+        result = subprocess.run(eval_command, shell=True, capture_output=True, text=True, check=False, timeout=timeout)
+        # Combine stdout and stderr for complete output
+        output = result.stderr if result.stderr else ""
+        if result.stdout:
+            if len(output) > 0:
+                output += "\n"
+            output += result.stdout
+        return truncate_output(output)
+    except subprocess.TimeoutExpired:
+        return f"Evaluation timed out after {'an unspecified duration' if timeout is None else f'{timeout} seconds'}."
 
 
 # Update Check Function
