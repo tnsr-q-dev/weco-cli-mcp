@@ -61,12 +61,12 @@ def start_optimization_run(
             if result.get("code") is None:
                 result["code"] = ""
             return result
-        except Exception as e:
+        except requests.exceptions.HTTPError as e:
             handle_api_error(e, console)
-            sys.exit(1)
+            raise
         except Exception as e:
             console.print(f"[bold red]Error starting run: {e}[/]")
-            sys.exit(1)
+            raise
 
 
 def evaluate_feedback_then_suggest_next_solution(
@@ -152,7 +152,7 @@ def send_heartbeat(run_id: str, auth_headers: dict = {}, timeout: Union[int, Tup
         return True
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 409:
-            print("Polling ignore: Run {run_id} is not running.", file=sys.stderr)
+            print(f"Polling ignore: Run {run_id} is not running.", file=sys.stderr)
         else:
             print(f"Polling failed for run {run_id}: HTTP {e.response.status_code}", file=sys.stderr)
         return False
@@ -221,7 +221,6 @@ def get_optimization_suggestions_from_codebase(
     """Analyze codebase and get optimization suggestions using the model-agnostic backend API."""
     model, api_key_dict = _determine_model_and_api_key()
     try:
-        model, api_key_dict = _determine_model_and_api_key()
         response = requests.post(
             f"{__base_url__}/onboard/analyze-codebase",
             json={
@@ -238,7 +237,7 @@ def get_optimization_suggestions_from_codebase(
         result = response.json()
         return [option for option in result.get("options", [])]
 
-    except Exception as e:
+    except requests.exceptions.HTTPError as e:
         handle_api_error(e, console)
         return None
     except Exception as e:
@@ -257,7 +256,6 @@ def generate_evaluation_script_and_metrics(
     """Generate evaluation script and determine metrics using the model-agnostic backend API."""
     model, api_key_dict = _determine_model_and_api_key()
     try:
-        model, api_key_dict = _determine_model_and_api_key()
         response = requests.post(
             f"{__base_url__}/onboard/generate-script",
             json={
@@ -294,7 +292,6 @@ def analyze_evaluation_environment(
     """Analyze existing evaluation scripts and environment using the model-agnostic backend API."""
     model, api_key_dict = _determine_model_and_api_key()
     try:
-        model, api_key_dict = _determine_model_and_api_key()
         response = requests.post(
             f"{__base_url__}/onboard/analyze-environment",
             json={
@@ -312,7 +309,7 @@ def analyze_evaluation_environment(
         response.raise_for_status()
         return response.json()
 
-    except Exception as e:
+    except requests.exceptions.HTTPError as e:
         handle_api_error(e, console)
         return None
     except Exception as e:
@@ -331,7 +328,6 @@ def analyze_script_execution_requirements(
     """Analyze script to determine proper execution command using the model-agnostic backend API."""
     model, api_key_dict = _determine_model_and_api_key()
     try:
-        model, api_key_dict = _determine_model_and_api_key()
         response = requests.post(
             f"{__base_url__}/onboard/analyze-script",
             json={
@@ -348,7 +344,7 @@ def analyze_script_execution_requirements(
         result = response.json()
         return result.get("command", f"python {script_path}")
 
-    except Exception as e:
+    except requests.exceptions.HTTPError as e:
         handle_api_error(e, console)
         return f"python {script_path}"
     except Exception as e:
