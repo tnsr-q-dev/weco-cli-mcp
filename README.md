@@ -242,6 +242,7 @@ Weco supports the following LLM models:
 - `gpt-4o-mini`
 
 ### Anthropic Models
+- `claude-opus-4-1`
 - `claude-opus-4-0`
 - `claude-sonnet-4-0`
 - `claude-3-7-sonnet-latest`
