@@ -84,7 +84,7 @@ weco run --source optimize.py \
 
 ### 🧠 Prompt Engineering
 
-- **Install extra deps**: `pip install weco>=0.2.18 openai datasets`
+- **Install extra deps**: `pip install openai datasets`
 - **Run**:
 ```bash
 cd examples/prompt
