@@ -19,7 +19,7 @@ Explore runnable examples that show how to use Weco to optimize kernels, prompts
 
 - **Install the CLI**
 ```bash
-pip install weco
+pip install weco>=0.2.18
 ```
 - **Set an API key** for at least one provider:
   - OpenAI: `export OPENAI_API_KEY="your_key_here"`
@@ -57,6 +57,7 @@ weco run --source optimize.py \
 ### ⚡ Triton Optimization
 
 - **Install extra deps**: `pip install torch triton`
+- **Requires**: NVIDIA or AMD GPU
 - **Run**:
 ```bash
 cd examples/triton
@@ -83,7 +84,7 @@ weco run --source optimize.py \
 
 ### 🧠 Prompt Engineering
 
-- **Install extra deps**: `pip install weco openai datasets`
+- **Install extra deps**: `pip install weco>=0.2.18 openai datasets`
 - **Run**:
 ```bash
 cd examples/prompt
