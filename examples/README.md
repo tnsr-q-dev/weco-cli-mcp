@@ -28,13 +28,13 @@ pip install weco>=0.2.18
 
 ### Examples at a glance
 
-| Example | Focus | Extras | Docs | Quick start |
-| :-- | :-- | :-- | :-- | :-- |
-| 🧭 Hello Kernel World | Learn the Weco workflow on a small PyTorch model | `torch` | [README](hello-kernel-world/README.md) • [Colab](hello-kernel-world/colab_notebook_walkthrough.ipynb) | [Jump](#hello-kernel-world) |
-| ⚡ Triton Optimization | Speed up attention with Triton kernels | `torch`, `triton` | [README](triton/README.md) | [Jump](#triton-optimization) |
-| 🚀 CUDA Optimization | Generate low-level CUDA kernels for max speed | `torch`, `ninja`, NVIDIA GPU + CUDA Toolkit | [README](cuda/README.md) | [Jump](#cuda-optimization) |
-| 🧠 Prompt Engineering | Iteratively refine LLM prompts to improve accuracy | `openai`, `datasets` | [README](prompt/README.md) | [Jump](#prompt-engineering) |
-| 🛰️ Spaceship Titanic | Improve a Kaggle model training pipeline | `pandas`, `numpy`, `scikit-learn`, `torch`, `xgboost`, `lightgbm`, `catboost` | [README](spaceship-titanic/README.md) | [Jump](#model-development--spaceship-titanic) |
+| Example | Focus | Extras | Docs |
+| :-- | :-- | :-- | :-- |
+| 🧭 Hello Kernel World | Learn the Weco workflow on a small PyTorch model | `torch` | [README](hello-kernel-world/README.md) • [Colab](hello-kernel-world/colab_notebook_walkthrough.ipynb) |
+| ⚡ Triton Optimization | Speed up attention with Triton kernels | `torch`, `triton` | [README](triton/README.md) |
+| 🚀 CUDA Optimization | Generate low-level CUDA kernels for max speed | `torch`, `ninja`, NVIDIA GPU + CUDA Toolkit | [README](cuda/README.md) |
+| 🧠 Prompt Engineering | Iteratively refine LLM prompts to improve accuracy | `openai`, `datasets` | [README](prompt/README.md) |
+| 🛰️ Spaceship Titanic | Improve a Kaggle model training pipeline | `pandas`, `numpy`, `scikit-learn`, `torch`, `xgboost`, `lightgbm`, `catboost` | [README](spaceship-titanic/README.md) |
 
 ---
 
