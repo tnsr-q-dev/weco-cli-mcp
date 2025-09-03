@@ -105,6 +105,7 @@ weco run --source optimize.py \
      --goal maximize \
      --steps 15 \
      --additional-instructions "Fuse operations in the forward method while ensuring the max float deviation remains small. Maintain the same format of the code."
+```
 
 **Note:** If you have an NVIDIA GPU, change the device in the `--eval-command` to `cuda`. If you are running this on Apple Silicon, set it to `mps`.
 
