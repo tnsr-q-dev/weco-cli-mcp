@@ -65,7 +65,8 @@ def save_execution_output(runs_dir: pathlib.Path, step: int, output: str) -> Non
 
     # Append to centralized JSONL index
     jsonl_file = runs_dir / "exec_output.jsonl"
-    entry = {"step": step, "timestamp": timestamp, "output_file": f"outputs/step_{step}.out.txt", "output_length": len(output)}
+    output_file_path = step_file.relative_to(runs_dir).as_posix()
+    entry = {"step": step, "timestamp": timestamp, "output_file": output_file_path, "output_length": len(output)}
     with open(jsonl_file, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")
 
