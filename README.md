@@ -111,6 +111,8 @@ weco run --source optimize.py \
 
 For more advanced examples, including [Triton](/examples/triton/README.md), [CUDA kernel optimization](/examples/cuda/README.md), [ML model optimization](/examples/spaceship-titanic/README.md), and [prompt engineering for math problems](examples/prompt/README.md), please see the `README.md` files within the corresponding subdirectories under the [`examples/`](examples/) folder.
 
+> Note: When recommend removing any backticks from your code if any are present. We currently don't support backticks but will support this in the future.
+
 ---
 
 ### Arguments for `weco run`
