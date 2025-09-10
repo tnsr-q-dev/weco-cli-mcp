@@ -1,0 +1,431 @@
+{
+  "schema_version": "v1",
+  "namespace": "weco",
+  "api_version": "0.2.28",
+  "description": "AI-driven code optimization tools for systematic performance improvement",
+  "tools": [
+    {
+      "name": "weco_run_optimization",
+      "description": "Execute AI-driven code optimization using evaluation-based feedback. Systematically improves code performance by iteratively modifying source files and evaluating results against specified metrics.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "Path to the source code file that will be optimized (e.g., 'optimize.py', 'model.py')"
+          },
+          "eval_command": {
+            "type": "string", 
+            "description": "Command to run for evaluation (e.g. 'python eval.py --device cpu'). Must print the target metric to stdout/stderr."
+          },
+          "metric": {
+            "type": "string",
+            "description": "Metric to optimize (e.g. 'accuracy', 'speedup', 'loss', 'f1_score') that is printed by the evaluation command"
+          },
+          "goal": {
+            "type": "string",
+            "enum": ["maximize", "max", "minimize", "min"],
+            "description": "Whether to maximize or minimize the metric"
+          },
+          "steps": {
+            "type": "integer",
+            "default": 100,
+            "description": "Number of optimization steps (LLM iterations) to run"
+          },
+          "model": {
+            "type": "string",
+            "description": "LLM model to use (e.g. 'gpt-4o', 'claude-3.5-sonnet', 'gemini-2.5-pro'). Auto-selected based on available API keys if not specified."
+          },
+          "additional_instructions": {
+            "type": "string", 
+            "description": "Additional natural language instructions to guide optimization, or path to file containing instructions"
+          },
+          "log_dir": {
+            "type": "string",
+            "default": ".runs",
+            "description": "Directory to store optimization logs and results"
+          },
+          "eval_timeout": {
+            "type": "integer",
+            "description": "Timeout in seconds for each evaluation step"
+          },
+          "save_logs": {
+            "type": "boolean",
+            "default": false,
+            "description": "Save detailed execution output to disk with JSONL index"
+          }
+        },
+        "required": ["source", "eval_command", "metric", "goal"]
+      },
+      "function": {
+        "type": "python_callable",
+        "module": "weco.optimizer",
+        "function": "execute_optimization"
+      },
+      "examples": [
+        {
+          "description": "Optimize PyTorch operations for speed",
+          "parameters": {
+            "source": "optimize.py",
+            "eval_command": "python evaluate.py --solution-path optimize.py --device cpu",
+            "metric": "speedup", 
+            "goal": "maximize",
+            "steps": 15,
+            "additional_instructions": "Fuse operations in the forward method while maintaining accuracy"
+          }
+        },
+        {
+          "description": "Optimize ML model for validation accuracy",
+          "parameters": {
+            "source": "model.py",
+            "eval_command": "python train_eval.py",
+            "metric": "validation_accuracy",
+            "goal": "maximize",
+            "steps": 50
+          }
+        }
+      ]
+    },
+    {
+      "name": "weco_analyze_codebase", 
+      "description": "Analyze a codebase using AI to identify optimization opportunities and suggest specific improvements. Provides intelligent recommendations for GPU kernels, ML models, prompt engineering, and more.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "project_path": {
+            "type": "string",
+            "default": ".",
+            "description": "Path to the project directory to analyze"
+          },
+          "model": {
+            "type": "string",
+            "description": "LLM model to use for analysis"
+          },
+          "focus_area": {
+            "type": "string",
+            "enum": ["performance", "gpu_kernels", "ml_models", "prompt_engineering", "general"],
+            "default": "general", 
+            "description": "Specific area to focus the analysis on"
+          }
+        },
+        "required": ["project_path"]
+      },
+      "function": {
+        "type": "python_callable",
+        "module": "weco.api",
+        "function": "get_optimization_suggestions_from_codebase"
+      },
+      "examples": [
+        {
+          "description": "Analyze current directory for optimization opportunities",
+          "parameters": {
+            "project_path": "."
+          }
+        },
+        {
+          "description": "Focus on GPU kernel optimization opportunities", 
+          "parameters": {
+            "project_path": "./cuda_kernels",
+            "focus_area": "gpu_kernels"
+          }
+        }
+      ]
+    },
+    {
+      "name": "weco_generate_evaluation",
+      "description": "Generate evaluation scripts and identify metrics automatically from codebase analysis. Creates proper evaluation harnesses for optimization workflows.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "project_path": {
+            "type": "string",
+            "description": "Path to the project to analyze for evaluation script generation"
+          },
+          "optimization_type": {
+            "type": "string",
+            "description": "Type of optimization (e.g. 'gpu_kernel', 'ml_model', 'prompt_engineering')"
+          },
+          "target_file": {
+            "type": "string",
+            "description": "Specific file that will be optimized"
+          },
+          "model": {
+            "type": "string",
+            "description": "LLM model to use for generation"
+          }
+        },
+        "required": ["project_path", "optimization_type"]
+      },
+      "function": {
+        "type": "python_callable", 
+        "module": "weco.api",
+        "function": "generate_evaluation_script_and_metrics"
+      },
+      "examples": [
+        {
+          "description": "Generate evaluation for PyTorch kernel optimization",
+          "parameters": {
+            "project_path": ".",
+            "optimization_type": "gpu_kernel",
+            "target_file": "kernel.py"
+          }
+        }
+      ]
+    },
+    {
+      "name": "weco_interactive_setup",
+      "description": "Launch interactive onboarding chatbot to analyze codebase, suggest optimizations, and set up complete optimization pipelines with guided configuration.",
+      "parameters": {
+        "type": "object", 
+        "properties": {
+          "project_path": {
+            "type": "string",
+            "default": ".",
+            "description": "Path to the project directory"
+          },
+          "model": {
+            "type": "string", 
+            "description": "LLM model to use for interactive setup"
+          }
+        },
+        "required": []
+      },
+      "function": {
+        "type": "python_callable",
+        "module": "weco.chatbot", 
+        "function": "run_onboarding_chatbot"
+      },
+      "examples": [
+        {
+          "description": "Start interactive setup for current project",
+          "parameters": {
+            "project_path": "."
+          }
+        }
+      ]
+    },
+    {
+      "name": "weco_authenticate",
+      "description": "Manage authentication with Weco services for accessing optimization runs, dashboard, and enhanced features. Handles secure device authentication flow.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["login", "logout", "status"],
+            "default": "login",
+            "description": "Authentication action to perform"
+          }
+        },
+        "required": []
+      },
+      "function": {
+        "type": "python_callable",
+        "module": "weco.auth",
+        "function": "handle_authentication"
+      },
+      "examples": [
+        {
+          "description": "Log in to Weco services", 
+          "parameters": {
+            "action": "login"
+          }
+        },
+        {
+          "description": "Check authentication status",
+          "parameters": {
+            "action": "status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "weco_check_status",
+      "description": "Check the status of running optimization jobs, view progress, and retrieve results from optimization runs.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "description": "ID of the optimization run to check"
+          },
+          "log_dir": {
+            "type": "string", 
+            "default": ".runs",
+            "description": "Directory containing optimization logs"
+          }
+        },
+        "required": []
+      },
+      "function": {
+        "type": "python_callable",
+        "module": "weco.api",
+        "function": "get_optimization_run_status"
+      },
+      "examples": [
+        {
+          "description": "Check status of specific optimization run",
+          "parameters": {
+            "run_id": "abc123-def456"
+          }
+        }
+      ]
+    },
+    {
+      "name": "weco_list_models",
+      "description": "List available LLM models for optimization, including OpenAI, Anthropic, and Google models with their capabilities and requirements.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": ["openai", "anthropic", "google", "all"],
+            "default": "all", 
+            "description": "Filter models by provider"
+          }
+        },
+        "required": []
+      },
+      "function": {
+        "type": "python_function",
+        "implementation": "def weco_list_models(provider='all'):\n    models = {\n        'openai': ['gpt-5', 'gpt-5-mini', 'o3-pro', 'o3', 'o4-mini', 'gpt-4o', 'gpt-4o-mini'],\n        'anthropic': ['claude-opus-4-1', 'claude-sonnet-4-0', 'claude-3.5-sonnet'],\n        'google': ['gemini-2.5-pro', 'gemini-2.5-flash']\n    }\n    if provider == 'all':\n        return models\n    else:\n        return {provider: models.get(provider, [])}"
+      },
+      "examples": [
+        {
+          "description": "List all available models",
+          "parameters": {}
+        },
+        {
+          "description": "List only OpenAI models",
+          "parameters": {
+            "provider": "openai"
+          }
+        }
+      ]
+    },
+    {
+      "name": "weco_create_example",
+      "description": "Create example optimization projects based on templates (GPU kernels, ML models, prompt engineering) with evaluation scripts and sample code.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "example_type": {
+            "type": "string",
+            "enum": ["hello-kernel-world", "cuda", "triton", "spaceship-titanic", "prompt"],
+            "description": "Type of example project to create"
+          },
+          "output_dir": {
+            "type": "string",
+            "default": ".",
+            "description": "Directory to create the example in"
+          }
+        },
+        "required": ["example_type"]
+      },
+      "function": {
+        "type": "python_function",
+        "implementation": "def weco_create_example(example_type, output_dir='.'):\n    import shutil\n    import os\n    from pathlib import Path\n    \n    # Map to actual example directories in the repo\n    examples_map = {\n        'hello-kernel-world': 'examples/hello-kernel-world',\n        'cuda': 'examples/cuda', \n        'triton': 'examples/triton',\n        'spaceship-titanic': 'examples/spaceship-titanic',\n        'prompt': 'examples/prompt'\n    }\n    \n    if example_type not in examples_map:\n        raise ValueError(f'Unknown example type: {example_type}')\n    \n    source_dir = examples_map[example_type]\n    if not os.path.exists(source_dir):\n        raise FileNotFoundError(f'Example {example_type} not found')\n    \n    target_dir = Path(output_dir) / example_type\n    shutil.copytree(source_dir, target_dir, dirs_exist_ok=True)\n    return f'Created {example_type} example in {target_dir}'"
+      },
+      "examples": [
+        {
+          "description": "Create a simple PyTorch optimization example",
+          "parameters": {
+            "example_type": "hello-kernel-world"
+          }
+        },
+        {
+          "description": "Create a CUDA kernel optimization example",
+          "parameters": {
+            "example_type": "cuda",
+            "output_dir": "./my_project"
+          }
+        }
+      ]
+    }
+  ],
+  "environment": {
+    "requirements": {
+      "api_keys": [
+        {
+          "name": "OPENAI_API_KEY",
+          "description": "OpenAI API key for GPT models",
+          "required_for": ["gpt-4o", "gpt-5", "o3", "o4-mini"]
+        },
+        {
+          "name": "ANTHROPIC_API_KEY", 
+          "description": "Anthropic API key for Claude models",
+          "required_for": ["claude-3.5-sonnet", "claude-sonnet-4-0"]
+        },
+        {
+          "name": "GEMINI_API_KEY",
+          "description": "Google AI API key for Gemini models", 
+          "required_for": ["gemini-2.5-pro", "gemini-2.5-flash"]
+        }
+      ],
+      "python_version": ">=3.8",
+      "dependencies": [
+        "weco>=0.2.18",
+        "requests",
+        "rich", 
+        "gitingest",
+        "fastapi",
+        "slowapi"
+      ]
+    },
+    "installation": "pip install weco",
+    "base_url": "https://api.weco.ai/v1",
+    "dashboard_url": "https://dashboard.weco.ai"
+  },
+  "usage_patterns": {
+    "optimization_workflow": {
+      "description": "Complete code optimization workflow",
+      "steps": [
+        {
+          "step": 1,
+          "action": "weco_analyze_codebase", 
+          "description": "Analyze project for optimization opportunities"
+        },
+        {
+          "step": 2,
+          "action": "weco_generate_evaluation",
+          "description": "Generate or configure evaluation scripts" 
+        },
+        {
+          "step": 3,
+          "action": "weco_run_optimization",
+          "description": "Execute optimization with specified parameters"
+        },
+        {
+          "step": 4, 
+          "action": "weco_check_status",
+          "description": "Monitor progress and retrieve results"
+        }
+      ]
+    },
+    "interactive_workflow": {
+      "description": "Guided setup with AI assistance",
+      "steps": [
+        {
+          "step": 1,
+          "action": "weco_interactive_setup",
+          "description": "Launch interactive chatbot for guided configuration"
+        }
+      ]
+    },
+    "example_workflow": {
+      "description": "Start with pre-built examples",
+      "steps": [
+        {
+          "step": 1,
+          "action": "weco_create_example",
+          "description": "Create example project from template"
+        },
+        {
+          "step": 2,
+          "action": "weco_run_optimization", 
+          "description": "Run optimization on example code"
+        }
+      ]
+    }
+  }
+}
